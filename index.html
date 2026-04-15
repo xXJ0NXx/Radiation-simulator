@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RADIATION EXPOSURE SIMULATOR</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--g:#00ff41;--gd:#00aa2a;--gk:#003b0e;--y:#ffe600;--bg:#030a03;--pan:#060f06;--tx:#b8ffb8;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--g);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.013) 2px,rgba(0,255,65,.013) 4px);
+  animation:flicker 10s infinite;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
+  background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,.1) 3px,rgba(0,0,0,.1) 4px);}
+@keyframes flicker{0%,97%,100%{opacity:1}98%{opacity:.97}99%{opacity:1}}
+.warn{background:repeating-linear-gradient(45deg,var(--y) 0,var(--y) 10px,#1a1400 10px,#1a1400 20px);
+  text-align:center;padding:5px;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;color:#1a1400;letter-spacing:.2em;}
+header{text-align:center;padding:20px 20px 12px;border-bottom:1px solid var(--gk);position:relative;}
+header::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:60%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--g),transparent);}
+.title{font-family:'Orbitron',sans-serif;font-size:clamp(13px,2.8vw,26px);font-weight:900;letter-spacing:.15em;
+  text-shadow:0 0 20px var(--g),0 0 40px rgba(0,255,65,.3);}
+.subtitle{font-family:'VT323',monospace;font-size:15px;color:var(--gd);letter-spacing:.28em;margin-top:3px;}
+.main{display:grid;grid-template-columns:1fr 345px;max-width:1200px;margin:0 auto;padding:18px 14px;}
+@media(max-width:800px){.main{grid-template-columns:1fr}}
+.lp{padding-right:20px;}
+.rp{border-left:1px solid var(--gk);padding-left:20px;display:flex;flex-direction:column;gap:14px;}
+@media(max-width:800px){.rp{border-left:none;border-top:1px solid var(--gk);padding-left:0;padding-top:18px;}}
+.panel{background:var(--pan);border:1px solid var(--gk);padding:16px;margin-bottom:14px;position:relative;}
+.ptitle{position:absolute;top:-8px;left:12px;background:var(--pan);padding:0 7px;font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:.2em;color:var(--gd);}
+.ddisplay{font-family:'Orbitron',sans-serif;font-size:clamp(18px,3.2vw,32px);font-weight:900;text-align:center;margin-bottom:8px;
+  text-shadow:0 0 16px currentColor;transition:color .3s;line-height:1.2;min-height:44px;}
+.dunit{font-size:.42em;display:block;letter-spacing:.18em;opacity:.7;font-weight:400;}
+.dequiv{font-size:10px;text-align:center;color:var(--gd);margin-bottom:12px;font-style:italic;min-height:14px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:var(--gk);border-radius:0;outline:none;cursor:pointer;border:1px solid var(--gk);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--g);border-radius:0;cursor:pointer;box-shadow:0 0 8px var(--g),0 0 16px rgba(0,255,65,.4);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;background:var(--g);border:none;border-radius:0;cursor:pointer;}
+.slabels{display:flex;justify-content:space-between;font-size:8px;color:var(--gd);margin-top:5px;}
+.presets{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;}
+.pbtn{background:transparent;border:1px solid var(--gk);color:var(--gd);font-family:'Share Tech Mono',monospace;font-size:8px;
+  padding:4px 6px;cursor:pointer;letter-spacing:.03em;transition:all .12s;white-space:nowrap;}
+.pbtn:hover{border-color:var(--g);color:var(--g);background:rgba(0,255,65,.05);box-shadow:0 0 6px rgba(0,255,65,.2);}
+.bodysec{display:flex;gap:18px;align-items:flex-start;}
+#bsvg{width:108px;flex-shrink:0;display:block;}
+.olist{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.orow{display:flex;align-items:center;gap:6px;}
+.odot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .4s,box-shadow .4s;}
+.oname{flex:1;font-size:8.5px;color:var(--gd);letter-spacing:.04em;}
+.obar{width:55px;height:4px;background:var(--gk);flex-shrink:0;}
+.ofill{height:100%;transition:width .4s,background .4s;}
+.olbl{font-size:7.5px;text-align:right;min-width:54px;flex-shrink:0;transition:color .4s;letter-spacing:.02em;}
+.ars-wrap{display:none;margin-top:10px;}
+.ars-label{font-size:7.5px;color:var(--gd);letter-spacing:.15em;font-family:'Orbitron',sans-serif;margin-bottom:4px;}
+.ars-bar{display:flex;gap:3px;}
+.ars-phase{flex:1;text-align:center;font-size:6.5px;padding:4px 2px;border:1px solid var(--gk);color:var(--gd);letter-spacing:.04em;transition:all .3s;font-family:'Orbitron',sans-serif;}
+.ars-phase.on{color:#000;font-weight:700;}
+.sitem{display:flex;gap:7px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(0,255,65,.05);}
+.sitem:last-child{border-bottom:none;}
+.sico{font-size:12px;flex-shrink:0;margin-top:1px;}
+.stxt{font-size:10px;line-height:1.55;color:var(--tx);}
+.stxt strong{display:block;font-size:8.5px;letter-spacing:.1em;margin-bottom:2px;font-family:'Orbitron',sans-serif;font-weight:700;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.mitem{background:rgba(0,255,65,.02);border:1px solid rgba(0,255,65,.06);padding:7px;}
+.mlabel{font-size:7.5px;color:var(--gd);letter-spacing:.1em;font-family:'Orbitron',sans-serif;margin-bottom:3px;}
+.mval{font-size:9.5px;color:var(--tx);line-height:1.45;}
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.bitem{text-align:center;background:rgba(0,255,65,.02);border:1px solid rgba(0,255,65,.06);padding:5px 3px;}
+.blbl{font-size:7px;color:var(--gd);letter-spacing:.05em;font-family:'Orbitron',sans-serif;margin-bottom:2px;}
+.bval{font-size:10px;font-family:'Orbitron',sans-serif;font-weight:700;transition:color .4s;line-height:1.2;}
+.bunit{font-size:6.5px;color:var(--gd);}
+.bstat{font-size:6.5px;margin-top:2px;}
+.bnote{font-size:9px;color:var(--tx);margin-top:8px;line-height:1.5;padding:7px;background:rgba(0,255,65,.02);border:1px solid rgba(0,255,65,.06);}
+.ttitle{font-family:'Orbitron',sans-serif;font-size:7.5px;color:var(--gd);letter-spacing:.13em;margin-bottom:5px;}
+.titem{font-size:9px;color:var(--tx);line-height:1.55;margin-bottom:3px;}
+.titem::before{content:'▸ ';color:var(--gd);}
+.tab-bar{display:flex;border-bottom:1px solid var(--gk);}
+.tab-btn{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--gd);font-family:'Share Tech Mono',monospace;
+  font-size:8.5px;padding:6px 9px;cursor:pointer;letter-spacing:.05em;transition:all .14s;}
+.tab-btn.on{color:var(--g);border-bottom-color:var(--g);}
+.tab-btn:hover{color:var(--g);}
+.tc{display:none;padding-top:12px;}
+.tc.on{display:block;}
+.haz{text-align:center;}
+.hsym{font-size:44px;line-height:1;margin-bottom:6px;display:block;animation:psym 2s ease-in-out infinite;}
+@keyframes psym{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.hname{font-family:'Orbitron',sans-serif;font-weight:900;font-size:11px;letter-spacing:.1em;text-shadow:0 0 12px currentColor;transition:color .3s;}
+.hcat{font-size:8.5px;color:var(--gd);margin-top:3px;letter-spacing:.07em;}
+.hdesc{font-size:9.5px;color:var(--tx);margin-top:6px;line-height:1.55;}
+.slabel{display:flex;justify-content:space-between;font-size:8.5px;color:var(--gd);margin-bottom:4px;letter-spacing:.03em;}
+.spct{font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;}
+.barbg{background:var(--gk);height:8px;border:1px solid rgba(0,255,65,.1);margin-bottom:8px;}
+.barfill{height:100%;transition:width .5s,background .5s;box-shadow:0 0 5px currentColor;}
+.ld50{font-size:8.5px;color:var(--gd);font-style:italic;margin-bottom:7px;line-height:1.5;}
+.progtxt{font-size:9.5px;color:var(--tx);line-height:1.6;border-top:1px solid rgba(0,255,65,.08);padding-top:8px;margin-top:4px;}
+.tlitem{display:flex;gap:7px;align-items:flex-start;margin-bottom:8px;}
+.tline{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.tdot{width:6px;height:6px;border-radius:50%;box-shadow:0 0 4px currentColor;flex-shrink:0;}
+.tconn{width:1px;flex:1;background:rgba(0,255,65,.1);min-height:8px;margin:2px 0;}
+.tcont{flex:1;}
+.ttime{font-family:'Orbitron',sans-serif;font-size:7.5px;letter-spacing:.05em;}
+.tevent{font-size:9px;color:var(--tx);line-height:1.4;margin-top:2px;}
+.tdetail{font-size:8px;color:var(--gd);line-height:1.4;margin-top:2px;}
+.case{background:rgba(0,255,65,.018);border:1px solid rgba(0,255,65,.08);padding:9px;margin-bottom:7px;}
+.cname{font-family:'Orbitron',sans-serif;font-size:8.5px;color:var(--g);letter-spacing:.07em;margin-bottom:3px;}
+.cdose{font-size:8px;margin-bottom:3px;}
+.ctext{font-size:9px;color:var(--tx);line-height:1.5;}
+.ctxitem{display:flex;gap:7px;font-size:9px;color:var(--tx);margin-bottom:7px;line-height:1.45;}
+.ctxico{flex-shrink:0;font-size:12px;}
+.ctxsrc{font-size:7.5px;color:var(--gd);display:block;margin-top:1px;}
+#deathOverlay{display:none;position:fixed;inset:0;background:rgba(80,0,0,.12);pointer-events:none;z-index:500;animation:dpulse 1.5s ease-in-out infinite;}
+@keyframes dpulse{0%,100%{opacity:.35}50%{opacity:1}}
+#ptcls{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden;}
+.ptcl{position:absolute;width:2px;height:2px;border-radius:50%;animation:pfly linear infinite;opacity:0;}
+@keyframes pfly{0%{transform:translate(0,0) scale(1);opacity:.8}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+@keyframes glitch{0%,100%{transform:translate(0)}20%{transform:translate(-2px,1px)}40%{transform:translate(2px,-1px)}60%{transform:translate(0)}80%{transform:translate(1px,2px)}}
+.glitch{animation:glitch .15s steps(2) 3;}
+.footer{text-align:center;padding:12px;border-top:1px solid var(--gk);font-size:8px;color:rgba(0,255,65,.2);letter-spacing:.08em;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--gk);}
+</style>
+</head>
+<body>
+<div id="deathOverlay"></div>
+<div id="ptcls"></div>
+<div class="warn">&#9888; EDUCATIONAL SIMULATION &#183; IAEA / ICRP / NCRP / REAC/TS DATA &#183; NOT MEDICAL ADVICE &#183; IONIZING RADIATION DOSIMETRY REFERENCE &#9888;</div>
+<header>
+  <div class="title">&#9762; RADIATION EXPOSURE SIMULATOR &#9762;</div>
+  <div class="subtitle">HUMAN DOSIMETRY &amp; ACUTE RADIATION SYNDROME REFERENCE v3.0</div>
+</header>
+<div class="main">
+<div class="lp">
+  <div class="panel">
+    <div class="ptitle">ABSORBED / EFFECTIVE DOSE INPUT</div>
+    <div class="ddisplay" id="dd">0.10<span class="dunit">MICROSIEVERTS (&#956;Sv)</span></div>
+    <div class="dequiv" id="de"></div>
+    <input type="range" id="slider" min="0" max="1000" step="1" value="0">
+    <div class="slabels"><span>0.1 &#956;Sv</span><span>1 mSv</span><span>100 mSv</span><span>1 Sv</span><span>100 Sv</span><span>1000 Sv</span></div>
+    <div class="presets" id="presets"></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">BIOLOGICAL IMPACT &#8212; ORGAN STATUS</div>
+    <div class="bodysec">
+      <svg id="bsvg" viewBox="0 0 100 290" xmlns="http://www.w3.org/2000/svg">
+        <ellipse id="bp-head" cx="50" cy="22" rx="18" ry="20" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s,filter .5s"/>
+        <circle cx="43" cy="19" r="2.2" fill="#00ff41" opacity=".5"/>
+        <circle cx="57" cy="19" r="2.2" fill="#00ff41" opacity=".5"/>
+        <path d="M43 27 Q50 31 57 27" fill="none" stroke="#00ff41" stroke-width=".8" opacity=".4"/>
+        <ellipse cx="50" cy="17" rx="11" ry="9" fill="none" stroke="#00ff41" stroke-width=".4" stroke-dasharray="2,2" opacity=".25"/>
+        <rect id="bp-neck" x="44" y="40" width="12" height="10" fill="#003b0e" stroke="#00ff41" stroke-width=".8" style="transition:fill .5s"/>
+        <ellipse id="bp-thyroid" cx="50" cy="44" rx="5" ry="3" fill="#001f08" stroke="#00ff41" stroke-width=".5" opacity=".7" style="transition:fill .5s"/>
+        <rect id="bp-torso" x="27" y="50" width="46" height="72" rx="4" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s,filter .5s"/>
+        <ellipse id="bp-ll" cx="39" cy="70" rx="9" ry="13" fill="#001f08" stroke="#00ff41" stroke-width=".6" opacity=".8" style="transition:fill .5s"/>
+        <ellipse id="bp-lr" cx="61" cy="70" rx="9" ry="13" fill="#001f08" stroke="#00ff41" stroke-width=".6" opacity=".8" style="transition:fill .5s"/>
+        <ellipse id="bp-heart" cx="57" cy="69" rx="6" ry="7" fill="#001508" stroke="#ff4444" stroke-width=".8" style="transition:fill .5s"/>
+        <text x="57" y="72" text-anchor="middle" font-size="7" fill="#ff4444" opacity=".8">&#9829;</text>
+        <line x1="50" y1="50" x2="50" y2="120" stroke="#00ff41" stroke-width=".4" stroke-dasharray="2,4" opacity=".18"/>
+        <ellipse id="bp-stomach" cx="50" cy="100" rx="11" ry="7" fill="#001a06" stroke="#00ff41" stroke-width=".6" opacity=".7" style="transition:fill .5s"/>
+        <path id="bp-gut" d="M38 108 Q45 112 52 108 Q59 104 52 112 Q45 116 38 112" fill="none" stroke="#00ff41" stroke-width=".7" opacity=".4" style="transition:stroke .5s"/>
+        <rect id="bp-al" x="5" y="52" width="20" height="66" rx="8" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s,filter .5s"/>
+        <rect id="bp-ar" x="75" y="52" width="20" height="66" rx="8" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s,filter .5s"/>
+        <ellipse cx="15" cy="123" rx="9" ry="7" fill="#002b08" stroke="#00ff41" stroke-width=".7"/>
+        <ellipse cx="85" cy="123" rx="9" ry="7" fill="#002b08" stroke="#00ff41" stroke-width=".7"/>
+        <path id="bp-pelvis" d="M27 122 Q27 140 50 140 Q73 140 73 122 Z" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s"/>
+        <ellipse id="bp-gonads" cx="50" cy="134" rx="8" ry="4" fill="#001508" stroke="#00ff41" stroke-width=".5" opacity=".6" style="transition:fill .5s"/>
+        <rect id="bp-ll2" x="29" y="140" width="19" height="100" rx="8" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s,filter .5s"/>
+        <rect id="bp-lr2" x="52" y="140" width="19" height="100" rx="8" fill="#003b0e" stroke="#00ff41" stroke-width="1" style="transition:fill .5s,filter .5s"/>
+        <line x1="38" y1="140" x2="38" y2="238" stroke="#00ff41" stroke-width=".5" stroke-dasharray="2,5" opacity=".18"/>
+        <line x1="61" y1="140" x2="61" y2="238" stroke="#00ff41" stroke-width=".5" stroke-dasharray="2,5" opacity=".18"/>
+        <ellipse cx="38" cy="245" rx="12" ry="6" fill="#002b08" stroke="#00ff41" stroke-width=".7"/>
+        <ellipse cx="62" cy="245" rx="12" ry="6" fill="#002b08" stroke="#00ff41" stroke-width=".7"/>
+      </svg>
+      <div class="olist" id="olist"></div>
+    </div>
+    <div class="ars-wrap" id="ars-wrap">
+      <div class="ars-label">ARS PHASE PROGRESSION</div>
+      <div class="ars-bar">
+        <div class="ars-phase" id="ap0">PRODROMAL</div>
+        <div class="ars-phase" id="ap1">LATENT</div>
+        <div class="ars-phase" id="ap2">MANIFEST</div>
+        <div class="ars-phase" id="ap3">RECOVERY</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="padding-bottom:14px;">
+    <div class="ptitle">CLINICAL DATA</div>
+    <div class="tab-bar">
+      <button class="tab-btn on" onclick="switchTab('sym',this)">SYMPTOMS</button>
+      <button class="tab-btn" onclick="switchTab('mech',this)">MECHANISM</button>
+      <button class="tab-btn" onclick="switchTab('blood',this)">BLOOD COUNTS</button>
+      <button class="tab-btn" onclick="switchTab('tx',this)">TREATMENT</button>
+    </div>
+    <div class="tc on" id="tc-sym"><div id="sym"></div></div>
+    <div class="tc" id="tc-mech"><div id="mech"></div></div>
+    <div class="tc" id="tc-blood"><div id="blood"></div></div>
+    <div class="tc" id="tc-tx"><div id="tx"></div></div>
+  </div>
+</div>
+<div class="rp">
+  <div class="panel haz">
+    <div class="ptitle">CLASSIFICATION</div>
+    <span class="hsym" id="hsym">&#9762;</span>
+    <div class="hname" id="hname">BACKGROUND RADIATION</div>
+    <div class="hcat" id="hcat">ICRP: NEGLIGIBLE RISK</div>
+    <div class="hdesc" id="hdesc"></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">PROGNOSIS &amp; SURVIVAL</div>
+    <div class="slabel"><span>30-DAY SURVIVAL (untreated)</span><span class="spct" id="sp1" style="color:var(--g)">100%</span></div>
+    <div class="barbg"><div class="barfill" id="sb1" style="width:100%;background:var(--g)"></div></div>
+    <div class="slabel"><span>30-DAY SURVIVAL (treated)</span><span class="spct" id="sp2" style="color:var(--g)">100%</span></div>
+    <div class="barbg"><div class="barfill" id="sb2" style="width:100%;background:var(--g)"></div></div>
+    <div class="ld50" id="ld50"></div>
+    <div class="progtxt" id="prog"></div>
+  </div>
+  <div class="panel"><div class="ptitle">CLINICAL ONSET TIMELINE</div><div id="tl"></div></div>
+  <div class="panel"><div class="ptitle">HISTORICAL CASE STUDIES</div><div id="cases"></div></div>
+  <div class="panel"><div class="ptitle">REAL-WORLD EQUIVALENTS</div><div id="ctx"></div></div>
+</div>
+</div>
+<div class="footer">&#169; Jon Stearns 2026</div>
+
+<script>
+// ── SCALE ──────────────────────────────────────────────
+const MINSV=1e-7,MAXSV=1000;
+function s2sv(v){return Math.pow(10,Math.log10(MINSV)+(v/1000)*(Math.log10(MAXSV)-Math.log10(MINSV)));}
+function sv2s(sv){return Math.round(((Math.log10(sv)-Math.log10(MINSV))/(Math.log10(MAXSV)-Math.log10(MINSV)))*1000);}
+function fmt(sv){
+  if(sv<1e-6)return{v:(sv*1e6).toFixed(2),u:'MICROSIEVERTS (\u03bcSv)'};
+  if(sv<0.001)return{v:(sv*1e6).toFixed(1),u:'MICROSIEVERTS (\u03bcSv)'};
+  if(sv<0.01)return{v:(sv*1000).toFixed(2),u:'MILLISIEVERTS (mSv)'};
+  if(sv<1)return{v:(sv*1000).toFixed(1),u:'MILLISIEVERTS (mSv)'};
+  if(sv<10)return{v:sv.toFixed(2),u:'SIEVERTS (Sv)'};
+  if(sv<100)return{v:sv.toFixed(1),u:'SIEVERTS (Sv)'};
+  return{v:sv.toFixed(0),u:'SIEVERTS (Sv)'};
+}
+function equiv(sv){
+  const u=sv*1e6;
+  if(u<0.15)return'Equivalent to eating one banana (K-40 natural radioactivity)';
+  if(u<3)return`\u2248 ${(u/0.1).toFixed(0)} bananas | ${(u/0.04).toFixed(0)} minutes of cosmic rays at sea level`;
+  if(u<20)return'Dental X-ray range (5\u201310 \u03bcSv) | short commercial flight';
+  if(u<600)return`Chest X-ray (~100 \u03bcSv) | ${(u/3100*100).toFixed(1)}% of avg. US annual background`;
+  if(sv<0.02)return`${(sv*1000).toFixed(0)} mSv \u2014 abdominal CT scan range (8\u201315 mSv)`;
+  if(sv<0.5)return`${(sv*1000).toFixed(0)} mSv \u2014 elevated occupational / emergency responder range`;
+  if(sv<1)return`${sv.toFixed(2)} Sv \u2014 clinical ARS Grade I threshold crossed`;
+  if(sv<6)return`${sv.toFixed(1)} Sv \u2014 Hematopoietic ARS (LD50 \u2248 4.5 Sv without treatment)`;
+  if(sv<50)return`${sv.toFixed(0)} Sv \u2014 GI/CNS syndrome \u2014 universally fatal`;
+  return`${sv.toFixed(0)} Sv \u2014 Instantaneous incapacitation \u2014 beyond all biological viability`;
+}
+
+// ── LEVEL THRESHOLDS ────────────────────────────────────
+const THR=[0,5e-4,0.001,0.01,0.05,0.1,0.25,0.5,1.0,2.0,4.0,6.0,10.0,20.0,50.0,150.0];
+function getL(sv){let l=0;for(let i=1;i<THR.length;i++)if(sv>=THR[i])l=i;return l;}
+
+// ── PRESETS ─────────────────────────────────────────────
+const PRESETS=[
+  {l:'🍌 Banana (0.1\u03bcSv)',sv:1e-7},{l:'🦷 Dental X-ray (5\u03bcSv)',sv:5e-6},
+  {l:'✈️ Transatlantic flight (80\u03bcSv)',sv:8e-5},{l:'🩻 Chest X-ray (100\u03bcSv)',sv:1e-4},
+  {l:'📡 Annual US background (3.1mSv)',sv:0.0031},{l:'🖥️ Abdominal CT (10mSv)',sv:0.01},
+  {l:'🚀 6-mo ISS mission (160mSv)',sv:0.16},{l:'⚠️ Rad worker annual limit (20mSv)',sv:0.02},
+  {l:'🇺🇦 Fukushima emergency (250mSv)',sv:0.25},{l:'☣️ ARS threshold (500mSv)',sv:0.5},
+  {l:'🏥 Mild ARS (1 Sv)',sv:1},{l:'🏥 Moderate ARS (2 Sv)',sv:2},
+  {l:'☢️ Severe ARS (4 Sv)',sv:4},{l:'💀 LD50/60 (~4.5 Sv)',sv:4.5},
+  {l:'☠️ Chernobyl firefighters (~6 Sv)',sv:6},{l:'☠️ Louis Slotin est. (21 Sv)',sv:21},
+  {l:'☠️ CNS syndrome (50 Sv)',sv:50},{l:'☠️ Instant lethal (200 Sv)',sv:200},
+  {l:'☠️ Maximum (1000 Sv)',sv:1000},
+];
+
+// ── LEVEL DATA ──────────────────────────────────────────
+const LD=[
+  {n:'BACKGROUND RADIATION',cat:'ICRP: NEGLIGIBLE RISK \u2014 NO RESTRICTION',c:'#00ff41',h:'☢',
+   desc:'Natural background: cosmic rays (~0.33 mSv/yr), terrestrial radionuclides (~0.21 mSv/yr), radon inhalation (~2.3 mSv/yr), internal K-40/C-14 (~0.29 mSv/yr). Average US total: ~3.1 mSv/yr. Unavoidable and ubiquitous.',
+   s:100,st:100,ld:'',
+   pr:'No detectable health effects. DNA repair enzymes (BER, NHEJ, homologous recombination) handle this effortlessly. Human cells repair ~50 DNA double-strand breaks per day from all natural sources combined.'},
+  {n:'LOW DOSE \u2014 NEGLIGIBLE',cat:'ICRP: TRIVIAL \u2014 NO CLINICAL CONCERN',c:'#00ee35',h:'☢',
+   desc:'Comparable to a dental bitewing X-ray (~5 \u03bcSv) or 1\u20132 hours of cosmic ray exposure at flight altitude. Well within all ALARA guidelines. Modern digital dental radiography uses ~50% less dose than older film systems.',
+   s:100,st:100,ld:'',
+   pr:'No acute or long-term effects. Lifetime attributable cancer risk increase is <0.001% \u2014 statistically undetectable against the ~40% baseline lifetime cancer risk in the general population.'},
+  {n:'LOW DOSE \u2014 DIAGNOSTIC RANGE',cat:'ICRP: LOW RISK \u2014 BENEFITS OUTWEIGH RISKS',c:'#88ff00',h:'☢',
+   desc:'Range of standard diagnostic medical imaging. CT head: ~2 mSv; abdominal CT: ~8\u201315 mSv; nuclear medicine PET: ~7\u201310 mSv. Clinical diagnostic benefit vastly outweighs any theoretical risk in this range.',
+   s:100,st:100,ld:'',
+   pr:'No acute effects. Under LNT model, 10 mSv carries ~1 in 2,000 theoretical excess lifetime cancer risk \u2014 comparable to driving 2,000 miles. The actual risk is likely negligible or zero; no epidemiological study has confirmed harm below ~50\u2013100 mSv.'},
+  {n:'ELEVATED OCCUPATIONAL',cat:'ICRP: REQUIRES FORMAL DOSIMETRY MONITORING',c:'#ccff00',h:'⚠',
+   desc:'Occupational range for interventional radiologists, nuclear plant workers, pilots. ICRP annual worker limit: 20 mSv/yr averaged over 5 years (max 50 mSv in any single year). Epidemiological cancer signal detectable above ~50\u2013100 mSv in large cohort studies.',
+   s:100,st:100,ld:'',
+   pr:'No acute effects. Formal TLD/OSL dosimetry badge and annual blood work are legally required. Estimated excess lifetime cancer risk at 50 mSv: ~0.25% above baseline. Workplace ALARA review mandatory if limits approached.'},
+  {n:'SIGNIFICANT DOSE',cat:'ICRP: ELEVATED RISK \u2014 MONITORING REQUIRED',c:'#ffee00',h:'⚠',
+   desc:'Upper range of annual occupational limits. Emergency worker limit: 100 mSv (NCRP). \u03b3-H2AX foci (DNA DSB markers) detectable in peripheral blood lymphocytes within 30 minutes of exposure. Chromosome aberrations measurable by cytogenetic dosimetry.',
+   s:100,st:100,ld:'',
+   pr:'No acute clinical syndrome. Transient lymphocyte reduction (~5\u201310%) detectable only by sensitive assay. Estimated 0.5\u20131.0% excess lifetime cancer risk (BEIR VII). Requires formal dose tracking and periodic hematological monitoring.'},
+  {n:'HIGH DOSE \u2014 PRE-THRESHOLD',cat:'APPROACHING ARS THRESHOLD',c:'#ffcc00',h:'⚠',
+   desc:'100\u2013250 mSv: above routine occupational limits. Chernobyl liquidators averaged ~120 mSv (1986\u20131990). Hiroshima/Nagasaki survivors at 1.5\u20132.5 km. Statistically significant solid cancer excess confirmed in A-bomb survivor cohort above ~100\u2013200 mSv.',
+   s:100,st:100,ld:'',
+   pr:'No clinical ARS. Transient lymphopenia detectable on CBC at 2\u20134 weeks. Mild nausea in ~5\u201310% of sensitive individuals at 200\u2013250 mSv. Dicentric chromosome assay detects damage. Estimated 1\u20132.5% excess lifetime cancer risk.'},
+  {n:'SUBCLINICAL ARS ZONE',cat:'BORDERLINE GRADE 0\u2192I ARS',c:'#ff9900',h:'☣',
+   desc:'250\u2013500 mSv: IAEA/WHO define Grade I ARS threshold at ~0.5 Sv. Prodromal symptoms emerge in sensitive individuals. Bone marrow shows measurable stress. Chernobyl first-responder firefighters were largely in this zone.',
+   s:100,st:100,ld:'',
+   pr:'Nausea/vomiting in 20\u201350% within 6 hours. Lymphocyte counts decline over 2\u20134 weeks but recover fully. Subclinical hematopoietic depression resolves without intervention. Antiemetics (ondansetron) prescribed for comfort.'},
+  {n:'MILD ARS \u2014 GRADE I',cat:'HEMATOPOIETIC SYNDROME \u2014 MILD',c:'#ff7700',h:'☣',
+   desc:'0.5\u20131 Sv: ARS Grade I. Hematopoietic system is the primary target. Bone marrow CD34+ progenitors have D\u2080 \u2248 1\u20132 Sv. Mechanism: radiation-induced p53/Bax apoptosis of HSC + GI serotonin (5-HT3) release triggering the vomiting reflex arc.',
+   s:95,st:99,ld:'',
+   pr:'Nausea/vomiting (50\u201380%) within 1\u20136 hours. Latent period 2\u20134 weeks (\u201cwalking ghost\u201d phase \u2014 victim appears recovered but marrow is depleting). Lymphocyte nadir at 3\u20134 weeks, then full recovery. ALC at 48h: 1,000\u20131,500/\u03bcL = mild ARS (METREPOL). Excellent prognosis with supportive care.'},
+  {n:'MILD-MODERATE ARS \u2014 GRADE II',cat:'HEMATOPOIETIC SYNDROME \u2014 MODERATE',c:'#ff5500',h:'☣',
+   desc:'1\u20132 Sv: ARS Grade II. 50\u201380% of HSC destroyed. Early GI mucosal involvement at upper range. Lymphocytes (D\u2080 \u2248 0.5\u20131 Sv, most radiosensitive blood cell) undergo rapid p53-mediated apoptosis within hours of exposure.',
+   s:85,st:95,ld:'LD50/60 without treatment: ~3.5\u20134.5 Sv. Medical treatment significantly improves outcome.',
+   pr:'Vomiting >80% within 1\u20134 hours. Time-to-vomiting <4h = key METREPOL prognostic indicator. Agranulocytosis (ANC <500/\u03bcL) for 1\u20132 weeks. Platelet nadir <50,000/\u03bcL. Opportunistic infections (Pseudomonas, E. coli, Candida) are primary killers during neutropenic phase.'},
+  {n:'MODERATE-SEVERE ARS \u2014 GRADE III',cat:'HEMATOPOIETIC + EARLY GI SYNDROME',c:'#ff3300',h:'☣',
+   desc:'2\u20134 Sv: ARS Grade II\u2013III. Near-complete bone marrow failure. GI crypt stem cell damage (D\u2080 \u2248 1.3 Sv) becomes clinically significant. Tokaimura (1999) Worker 3 received ~2.2 Sv and survived. METREPOL ALC at 48h: <300/\u03bcL = severe ARS.',
+   s:50,st:80,ld:'LD50/60 without treatment \u2248 3.5\u20134.5 Sv; with modern treatment (G-CSF, BMT, ICU): ~6\u20137 Sv.',
+   pr:'Explosive vomiting within 30\u201360 minutes (time-to-vomiting <60 min = dose likely >3 Sv by AFRRI triage). Near-total aplasia at nadir. GI mucosal barrier begins failing \u2192 enteric bacterial translocation \u2192 septicemia. Epilation (hair loss) at 14\u201321 days. BMT evaluation mandatory above 4 Sv.'},
+  {n:'SEVERE ARS \u2014 LD50 ZONE',cat:'HEMATOPOIETIC + GI SYNDROME \u2014 LD50',c:'#cc0000',h:'☠',
+   desc:'4\u20136 Sv: LD50/60 zone. REAC/TS registry and Chernobyl experience: LD50/60 without treatment \u2248 3.5\u20134.5 Sv; with aggressive modern care \u2248 6\u20137 Sv. Both syndromes fully active. Chernobyl 1986: 28 deaths among confirmed doses >4 Sv (out of 134 ARS cases total).',
+   s:20,st:60,ld:'LD50/60: ~4.5 Sv untreated. Modern ICU + G-CSF + BMT may extend effective LD50 to ~6\u20137 Sv.',
+   pr:'Incapacitating vomiting within 15 minutes. Complete marrow aplasia. GI barrier failure \u2192 polymicrobial septicemia (Gram-negatives, Aspergillus). Cytokine storm (IL-1\u03b2, IL-6, TNF-\u03b1) amplifies organ damage. BMT provides ~50% additional survival in this range; GVHD and engraftment failure are major post-BMT risks.'},
+  {n:'LETHAL ARS \u2014 GRADE IV',cat:'HEMATOPOIETIC + GI SYNDROME \u2014 NEAR-UNIFORMLY LETHAL',c:'#aa0000',h:'☠',
+   desc:'6\u201310 Sv: GI crypt cell survival \u2248 e^(\u22126/1.3) \u2248 0.1% \u2014 complete denudation inevitable. Cutaneous radiation syndrome (CRS): radiation burns, moist desquamation at 2\u20133 weeks. Louis Slotin (1946) estimated 21 Sv \u2014 died day 9. All Chernobyl firefighters receiving >6 Sv died.',
+   s:5,st:30,ld:'Near-universally lethal. LD99 without treatment ~5\u20136 Sv. Heroic treatment rarely saves patients above 8 Sv.',
+   pr:'Vomiting within 5\u201310 minutes. Complete aplasia \u2014 no autologous marrow recovery. GI mucosal sloughing day 3\u20135 \u2192 bloody diarrhea, fluid loss 5\u201310 L/day, electrolyte chaos. CRS requires burn ICU. Septicemia invariable. Death typically day 10\u201321. BMT gives ~25\u201330% chance.'},
+  {n:'GI SYNDROME DOMINANT',cat:'GASTROINTESTINAL SYNDROME \u2014 UNIFORMLY FATAL',c:'#880000',h:'☠',
+   desc:'10\u201320 Sv: GI syndrome dominates. At 10 Sv, crypt stem cell survival \u2248 0.00046% \u2014 complete denudation inevitable. Massive vascular endothelial damage drives fluid shifts. Early CNS effects emerge. No human has survived verified exposure in this range.',
+   s:1,st:5,ld:'100% lethal within 3\u201310 days. No treatment alters outcome.',
+   pr:'Incapacitation within 30 minutes. Complete GI denudation in 3\u20135 days \u2192 intestine becomes a raw bleeding wound. Electrolyte collapse, septic shock, cardiovascular failure. Treatment is palliative only: pain management, anti-emetics, sedation, family support.'},
+  {n:'GI + EARLY CNS SYNDROME',cat:'COMBINED GI/NEUROVASCULAR SYNDROME',c:'#660000',h:'☠',
+   desc:'20\u201350 Sv: Combined GI and early neurovascular syndrome. Direct vascular endothelial damage causes rapid cerebral edema. Harry Daghlian (1945, first criticality victim) estimated 5\u201310 Sv \u2014 died day 25. Goi\u00e2nia accident (1987) highest-dose victim (~7 Sv) died day 28.',
+   s:0,st:1,ld:'100% lethal within 1\u201310 days. All treatment is compassionate/palliative.',
+   pr:'Seizures and ataxia within hours from cerebral edema. Cardiovascular collapse from vascular endothelial destruction. Death within 1\u201310 days even with all available care. Organ donation not possible. Compassionate/palliative care is the only appropriate response.'},
+  {n:'CEREBROVASCULAR / CNS SYNDROME',cat:'NEUROVASCULAR SYNDROME \u2014 DEATH IN HOURS',c:'#440000',h:'☠',
+   desc:'50\u2013150 Sv: Massive vascular endothelium destruction throughout the brain. Cerebral vasodilation, edema, and herniation within hours. GI and hematopoietic concerns are moot \u2014 CNS failure kills first. Analogous to extremely high-dose radiotherapy fractions (>20 Gy/fraction) producing coagulative necrosis.',
+   s:0,st:0,ld:'Instantaneous to 48-hour mortality. No treatment relevant.',
+   pr:'Instantaneous neurological impairment within seconds to minutes. Seizures, profound hypotension, loss of consciousness. Massive cerebral edema and brainstem herniation within hours. Cardiovascular arrest from brainstem compression. Death within minutes to 48 hours. Achievable only inside an operating nuclear reactor core or at a prompt criticality epicenter.'},
+  {n:'INSTANTANEOUS INCAPACITATION',cat:'BEYOND BIOLOGICAL VIABILITY',c:'#220000',h:'☠',
+   desc:'>150 Sv: Complete instantaneous destruction of all biological processes. Ion pair density: >10\u00b9\u2075 per gram of tissue. Protein tertiary structures collapse throughout the entire organism simultaneously. Every enzyme active site destroyed in real time. Direct thermal effects supplement ionization damage.',
+   s:0,st:0,ld:'Instantaneous death. No biological or medical concept applies.',
+   pr:'All neurological and cardiovascular function ceases within seconds. Every ATP-dependent process fails simultaneously. No resuscitation is theoretically conceivable. This dose range exists only in shielding calculations and reactor physics models (MCNP/SCALE codes). No biological measurement is possible in a living subject at this dose.'},
+];
+
+// ── ORGANS ──────────────────────────────────────────────
+const ORGANS=[
+  {id:'bone-marrow',n:'BONE MARROW',ids:['bp-ll2','bp-lr2','bp-al','bp-ar'],thr:6},
+  {id:'lymphocytes',n:'LYMPHOCYTES',ids:[],thr:5},
+  {id:'gi-mucosa',n:'GI MUCOSA',ids:['bp-stomach','bp-gut'],thr:8},
+  {id:'skin',n:'SKIN/EPITHELIUM',ids:['bp-torso'],thr:7},
+  {id:'gonads',n:'GONADS/REPRO.',ids:['bp-gonads','bp-pelvis'],thr:3},
+  {id:'thyroid',n:'THYROID',ids:['bp-thyroid'],thr:5},
+  {id:'lungs',n:'LUNGS',ids:['bp-ll','bp-lr'],thr:9},
+  {id:'heart',n:'HEART/VASCULATURE',ids:['bp-heart'],thr:10},
+  {id:'cns',n:'CNS / BRAIN',ids:['bp-head'],thr:12},
+];
+const OS=[
+  {l:'NORMAL',c:'#00ff41',p:100},{l:'STRESSED',c:'#b8ff00',p:90},{l:'SUBCLIN.',c:'#ffe600',p:75},
+  {l:'DAMAGED',c:'#ff9900',p:55},{l:'SEVERE',c:'#ff5500',p:35},{l:'CRITICAL',c:'#ff2200',p:15},
+  {l:'FAILURE',c:'#aa0000',p:3},{l:'DESTROYED',c:'#440000',p:0},
+];
+function osi(o,lv){const d=lv-o.thr;if(d<0)return 0;return Math.min(d+1,OS.length-1);}
+
+// ── SYMPTOMS ────────────────────────────────────────────
+const SYM=[
+  [],
+  [{i:'✅',t:'NO DETECTABLE EFFECT',x:'No biological markers elevated. DNA repair mechanisms (BER, NHEJ, HR) fully handle this dose. The 2\u20134 DNA double-strand breaks per cell produced are indistinguishable from the constant background of metabolic and natural radiation damage repaired every day.'}],
+  [{i:'✅',t:'NO ACUTE EFFECTS \u2014 DIAGNOSTIC RANGE',x:'No symptoms. Medical imaging benefits vastly outweigh theoretical risks. At 10 mSv, theoretical excess lifetime cancer risk ~1 in 2,000 per BEIR VII \u2014 statistically undetectable in any real-world study.'},{i:'🔬',t:'LNT MODEL CONSIDERATION',x:'The linear no-threshold (LNT) model assumes any dose carries some cancer risk. This remains contested: threshold and hormesis models suggest no harm below ~100 mSv. No population study has demonstrated measurable harm below ~50 mSv after proper statistical analysis.'}],
+  [{i:'🔬',t:'SUBCLINICAL \u2014 MONITORING ONLY',x:'Formal radiation badge (TLD/OSL) and annual CBC legally required for occupational workers. No symptoms. Chromosome aberrations detectable by FISH cytogenetics \u2014 used in A-bomb survivor studies. INWORKS study (~300,000 nuclear workers) found leukemia risk signal above ~100 mSv.'},{i:'📊',t:'EPIDEMIOLOGICAL THRESHOLD',x:'Statistically significant solid cancer excess detectable in large cohorts above ~50\u2013100 mSv. Individual risk remains extremely small. Epidemiological studies require tens of thousands of subjects to detect such signals.'}],
+  [{i:'🔬',t:'SUBTLE LYMPHOCYTE CHANGES',x:'\u03b3-H2AX foci (phosphorylated histone H2AX at Ser139, a DNA DSB marker) detectable in peripheral blood lymphocytes within 30 minutes. Sensitive down to ~1 mSv. Foci resolve as DSBs are repaired within 24h at low doses. Used as an acute biological dosimeter.'},{i:'📊',t:'CANCER RISK \u2014 QUANTIFIABLE',x:'At 100 mSv: estimated 0.5\u20131% excess lifetime cancer risk per BEIR VII. Equivalent risk to smoking ~2,500 cigarettes. Leukemia latency: 2\u20135 years. Solid tumor latency: 10\u201330 years. Individual risk remains low against 40% baseline lifetime cancer risk.'}],
+  [{i:'🤢',t:'MILD NAUSEA (5\u201310% of individuals)',x:'At 200\u2013250 mSv, nausea in ~5\u201310% of sensitive individuals. No vomiting. Resolves within hours. Mechanism: radiation-induced apoptosis of GI enterochromaffin cells \u2192 serotonin (5-HT) release \u2192 activates chemoreceptor trigger zone (CTZ) via vagal afferents \u2192 nausea reflex.'},{i:'🧬',t:'DNA DAMAGE DETECTABLE',x:'Dicentric chromosome frequency: ~1 per 1,000 lymphocytes at ~200 mSv (normal background: 0\u20132 per 1,000 cells). The IAEA Biodosimetry Network uses this assay for dose reconstruction. Each dicentric = one misrepaired DSB joining two chromosomes.'},{i:'💉',t:'LYMPHOCYTE KINETICS',x:'ALC may fall from ~2,000/\u03bcL baseline to ~1,500\u20131,800/\u03bcL over 4\u20136 weeks. Spontaneous full recovery. This kinetic curve is the basis of the METREPOL (Medical Treatment Protocols for Radiation Accident Victims) triage system used internationally.'}],
+  [{i:'🤢',t:'PRODROMAL: NAUSEA/VOMITING (20\u201350%)',x:'250\u2013500 mSv: nausea in 20\u201350%, vomiting in 10\u201330% within 1\u20136 hours. Fatigue, anorexia, headache. 5-HT3 and NK-1 receptor activation in the GI tract plus direct area postrema stimulation drive the emetic response.'},{i:'💉',t:'LYMPHOCYTE NADIR \u2014 SUBCLINICAL',x:'ALC falls to 1,000\u20131,500/\u03bcL over 2\u20133 weeks. Mild subclinical immunosuppression \u2014 no clinical infections expected. Granulocytes and platelets show small but measurable decline at 4\u20135 weeks then full recovery within 6\u20138 weeks.'},{i:'🧬',t:'HEMATOPOIETIC COMPENSATORY RESPONSE',x:'Bone marrow progenitors reduced but not critically depleted. Surviving stem cells mount a compensatory proliferative response driven by endogenous G-CSF and EPO released from marrow stroma and kidneys in response to mild aplasia. Recovery complete within 6\u20138 weeks.'}],
+  [{i:'🤮',t:'PRODROMAL: VOMITING (50\u201380%) WITHIN 6H',x:'Median time to vomiting: ~3 hours at 1 Sv. Anorexia, headache, malaise, mild fever (38\u00b0C). Duration 1\u20132 days. Mechanism: radiation apoptosis of GI crypt cells + 5-HT3 release from enterochromaffin cells \u2192 vagal afferents \u2192 area postrema \u2192 vomiting reflex.'},{i:'💀',t:'BONE MARROW DEPRESSION \u2014 SIGNIFICANT',x:'~30\u201370% of HSC killed (D\u2080 \u2248 1\u20132 Sv). ALC at 48h: 1,000\u20131,500/\u03bcL = MILD ARS (METREPOL Grade I). Granulocyte/platelet nadir at 3\u20134 weeks. Serial CBC every 2\u20133 days is essential \u2014 internal aplasia worsens while patient feels deceptively improved.'},{i:'😴',t:'LATENT PERIOD: 2\u20134 WEEKS',x:'After prodrome resolves, patient feels relatively well while marrow continues to fail. This \u201cwalking ghost\u201d phase is diagnostically critical. Victims may falsely believe they have recovered. Do not discharge without serial CBC follow-up.'},{i:'✅',t:'PROGNOSIS: EXCELLENT WITH SUPPORT',x:'Full recovery expected. Treatment: ondansetron (5-HT3 antagonist) for nausea, serial CBC, G-CSF if counts fall severely. No hospitalization usually required. Estimated long-term excess cancer risk: ~5% above baseline.'}],
+  [{i:'🤮',t:'PRODROMAL: EARLY AND SEVERE (>80%)',x:'Vomiting in >80% within 1\u20134 hours. Time-to-vomiting <2 hours at 2 Sv = key prognostic indicator in METREPOL/AFRRI triage. Significant diarrhea at upper range. Fever 38\u201339\u00b0C from radiation-induced cytokine storm (IL-1\u03b2, IL-6, TNF-\u03b1 surge within 2\u20136 hours).'},{i:'💀',t:'HEMATOPOIETIC FAILURE \u2014 MODERATE',x:'50\u201380% of HSC destroyed. ALC at 48h: 500\u2013999/\u03bcL = MODERATE ARS (METREPOL Grade II). ANC nadir <500/\u03bcL (agranulocytosis) for 1\u20132 weeks. Platelets <50,000/\u03bcL \u2014 hemorrhagic risk.'},{i:'🦠',t:'OPPORTUNISTIC INFECTION RISK',x:'Agranulocytosis creates profound immunosuppression. Primary threats: Gram-negative sepsis (Pseudomonas, Klebsiella, E. coli via gut translocation), Gram-positive cocci (S. aureus via skin), fungal infections (Candida, Aspergillus). Any fever during neutropenia is a medical emergency.'},{i:'🩹',t:'HEMORRHAGIC MANIFESTATIONS',x:'Petechiae (pinpoint skin hemorrhages) when platelets <20,000/\u03bcL. Gingival bleeding, epistaxis, possible GI hemorrhage. Platelet transfusion threshold: <10,000\u201320,000/\u03bcL (irradiated, leukodepleted product mandatory). Avoid all NSAIDs and invasive procedures.'}],
+  [{i:'🤮',t:'PRODROMAL: <30\u201360 MIN, EXPLOSIVE',x:'Vomiting within 30\u201360 minutes at 3\u20134 Sv \u2014 prognostically ominous. AFRRI triage: time-to-vomiting <30 min implies dose \u22654 Sv. Profuse vomiting, severe diarrhea, severe dehydration risk within hours. 100% incidence at 4 Sv.'},{i:'💀',t:'NEAR-COMPLETE MARROW FAILURE',x:'80\u201395% of HSC destroyed. ALC at 48h: <300/\u03bcL = SEVERE ARS (METREPOL Grade III). ANC and platelet nadirs are profound and prolonged (ANC <100/\u03bcL for 3\u20135 weeks). BMT evaluation mandatory above 3\u20134 Sv if no autologous recovery within 3\u20134 weeks.'},{i:'🫁',t:'GI INVOLVEMENT \u2014 CLINICALLY SIGNIFICANT',x:'GI crypt cell survival at 3\u20134 Sv \u2248 5\u201310%. Mucosal barrier begins to compromise. Intestinal permeability increases \u2192 translocation of enteric Gram-negative bacteria into bloodstream \u2192 bacteremia. Electrolyte imbalance from GI losses. Oral feeding becomes difficult or impossible.'},{i:'🧬',t:'EPILATION (HAIR LOSS)',x:'Hair follicle matrix cells (D\u2080 ~3 Gy) destroyed. Epilation begins 14\u201321 days post-exposure at doses >2\u20133 Sv gamma. Begins with scalp hair, may extend to body hair. Regrows 2\u20133 months post-recovery. Permanent alopecia possible above 7 Sv.'}],
+  [{i:'⚡',t:'PRODROMAL: <15 MIN, INCAPACITATING',x:'Vomiting within 10\u201315 minutes at 4\u20136 Sv. AFRRI guidance: time-to-vomiting <15 min = dose likely >4 Sv. Complete prostration \u2014 victim cannot perform any useful task. 100% incidence of all prodromal symptoms. This defines the \u201cprompt incapacitating dose\u201d used in nuclear emergency planning.'},{i:'💀',t:'COMPLETE BONE MARROW APLASIA',x:'Virtually complete destruction of all hematopoietic progenitors. ALC at 48h: <100/\u03bcL = Grade IV ARS. ANC \u2192 0 by day 10\u201314. Platelets \u2192 <5,000/\u03bcL by day 10. Without BMT or survival of extremely rare residual stem cells, death from aplasia within 4\u20136 weeks.'},{i:'🫀',t:'CARDIOVASCULAR COMPROMISE + CYTOKINE STORM',x:'Direct vascular endothelial injury: von Willebrand factor release, ICAM-1 upregulation, increased permeability \u2192 hypovolemic physiology. Cytokine storm: IL-1\u03b2, IL-6, TNF-\u03b1 peak within 2\u20136 hours \u2192 fever, malaise, cardiovascular instability. Ceramide-mediated endothelial apoptosis via acid sphingomyelinase.'},{i:'🦠',t:'POLYMICROBIAL SEPSIS',x:'GI barrier failure + neutropenia = catastrophic infection. Enteric organisms translocate into bloodstream. Invasive Aspergillus during prolonged agranulocytosis. Broad-spectrum IV antibiotics + antifungal prophylaxis are mandatory from day 7.'},{i:'☠️',t:'CHERNOBYL DATA',x:'Chernobyl 1986: 134 confirmed ARS cases. 28 died acutely within 3 months, all estimated >4 Sv. Most received G-CSF and BMT \u2014 only 2 BMTs engrafted long-term; the rest recovered via residual autologous stem cells aided by aggressive growth factor therapy (UNSCEAR 2008).'}],
+  [{i:'⚡',t:'IMMEDIATE INCAPACITATION (<10 MIN)',x:'Vomiting within 5 minutes. Complete prostration within 10 minutes. The victim cannot stand or perform any function. Any worker near a criticality event who vomits within 5 minutes has received a potentially lethal dose.'},{i:'💀',t:'TOTAL MARROW + GI SIMULTANEOUS FAILURE',x:'Complete aplasia \u2014 no autologous recovery. GI syndrome fully expressed: mucosal sloughing day 3\u20135. Fluid losses 5\u201310 L/day through denuded GI surface \u2192 hypovolemic shock. Massive electrolyte imbalance: hyponatremia, hypokalemia, metabolic acidosis. Bloody diarrhea day 3\u20135.'},{i:'🔥',t:'CUTANEOUS RADIATION SYNDROME (CRS)',x:'Radiation burns with characteristic staging: (1) Initial erythema within hours; (2) Latent phase 1\u20132 weeks; (3) Secondary erythema and blistering 2\u20133 weeks; (4) Moist desquamation and necrosis. Extremely painful. Chernobyl firefighters at 6\u201316 Sv suffered severe CRS managed in burn ICUs.'},{i:'☠️',t:'CASE: LOUIS SLOTIN (1946) + MASATO SHINOHARA (1999)',x:'Louis Slotin \u2014 Los Alamos Demon Core criticality: est. 21 Sv \u2192 vomiting within minutes, neurological symptoms within hours, died day 9. Full clinical progression documented. Masato Shinohara \u2014 Tokaimura: est. 7 Sv \u2192 survived 211 days despite aggressive treatment before succumbing to multi-organ failure.'}],
+  [{i:'⚡',t:'INCAPACITATION IN <30 MIN',x:'Ataxia, disorientation, visual disturbances from retinal vascular damage supplement GI symptoms. CNS effects at 10+ Sv reflect both direct brain ionization and cerebral ischemia from cardiovascular collapse.'},{i:'💀',t:'COMPLETE GI DENUDATION \u2014 ALL CRYPT CELLS GONE',x:'GI crypt stem cell survival at 10 Sv \u2248 e^(\u221210/1.3) \u2248 0.00046% \u2014 mathematically zero. Intestine cannot regenerate. Mucosal surface becomes a raw bleeding wound. Endotoxins flood the bloodstream. Death from combined intestinal failure, cardiovascular collapse, and septic shock within 3\u20137 days.'},{i:'🧠',t:'EARLY CEREBROVASCULAR EFFECTS',x:'Cerebral vasodilation, early edema, blood-brain barrier disruption. Cerebral hypoxia from cardiovascular collapse. Seizure activity from direct neuronal ionization and edema. All these converge on death within 3\u201310 days.'}],
+  [{i:'⚡',t:'INCAPACITATION WITHIN MINUTES',x:'Ataxia, disorientation, seizures. Area postrema directly irradiated \u2192 uncontrollable emesis. Victim cannot stand or speak coherently. The vascular endothelium throughout all organs is in the process of dying simultaneously.'},{i:'🧠',t:'CEREBROVASCULAR SYNDROME \u2014 DOMINANT',x:'Direct vascular endothelial damage throughout cerebral vasculature. Massive vasogenic edema: plasma floods the cerebral parenchyma. ICP rises acutely beyond all compensatory mechanisms. Transtentorial herniation of the brainstem \u2192 cardiovascular and respiratory arrest.'},{i:'💀',t:'DEATH WITHIN 1\u201310 DAYS',x:'Combined GI and cerebrovascular failure. At 20 Sv: death typically 3\u201310 days. No treatment alters survival. All individuals at the Hiroshima hypocenter modeling this dose range died within days. Treatment is palliative only.'}],
+  [{i:'⚡',t:'SECONDS TO INCAPACITATION',x:'Instantaneous massive neurological disruption. Every neuron bombarded by ionizing particles. Action potentials cease from membrane disruption. Cardiac arrhythmias from direct myocardial ion channel disruption. Loss of consciousness within seconds to minutes.'},{i:'🧠',t:'MASSIVE CEREBRAL EDEMA \u2014 ALL VASCULATURE DESTROYED',x:'All cerebral vascular endothelium destroyed simultaneously. Plasma floods all cerebral tissue. ICP rises catastrophically. All brainstem functions (breathing, cardiac regulation) cease from herniation and direct damage. The SL-1 Idaho (1961) operator closest to the reactor was found pinned to the ceiling \u2014 estimated >100 Sv, instantaneous death.'},{i:'☠️',t:'CERTAIN DEATH IN MINUTES TO HOURS',x:'No biological process survives beyond minutes. Doses in the 50\u2013150 Sv range are achievable inside an operating nuclear reactor during a prompt criticality event. Dosimetry performed post-mortem via neutron activation of Na-24 in blood and EPR of tooth enamel.'}],
+  [{i:'☠️',t:'INSTANTANEOUS MOLECULAR DESTRUCTION',x:'Ion pair density at 1000 Sv: ~10\u00b9\u2077 per gram of tissue. Every DNA molecule sustains hundreds of DSBs simultaneously. Every enzyme active site ionized multiple times per microsecond. No biochemical process survives even nanoseconds of exposure.'},{i:'⚡',t:'ZERO-SECOND INCAPACITATION',x:'Immediate and permanent cessation of all neural function. Cardiac and pulmonary arrest are instantaneous from direct ionization of all muscle cells. No resuscitation is theoretically possible \u2014 there is no functional substrate remaining.'},{i:'🔬',t:'THEORETICAL MODELING ONLY',x:'Doses in this range calculated using Monte Carlo neutron transport codes (MCNP, SCALE) for scenarios inside operating reactor cores during prompt criticality excursions. Post-mortem dose reconstruction uses EPR of tooth enamel, thermoluminescence of hair/nails, neutron activation of Na-24 in blood (REAC/TS methodology).'}],
+];
+
+// ── MECHANISM ───────────────────────────────────────────
+const MECH=[
+  [{l:'PRIMARY MECHANISM',v:'Ionization of water (70% of body) produces hydroxyl radicals (\u2022OH) in 10\u207b\u00b9\u2070s. These react with DNA within 10\u207b\u2079s. At background doses, the ~50 DNA double-strand breaks per cell per day from all natural sources are repaired without error by BER, NHEJ, and HR pathways.'},{l:'CELL RADIOSENSITIVITY',v:'Berg\u00f6ni\u00e9-Tribondeau law (1906): rapidly dividing cells > slowly dividing > non-dividing. Lymphocytes, marrow stem cells, GI crypt cells = most sensitive. Neurons and cardiac muscle = most resistant. D\u2080 ranges from 0.5 Sv (lymphocytes) to >50 Sv (neurons).'}],
+  [{l:'TRACK STRUCTURE',v:'Low-LET gamma/X-rays produce sparsely ionizing tracks. Delta electrons cause isolated DNA damage. At low doses, tracks are widely separated \u2014 independent repair mechanisms achieve near-perfect fidelity.'},{l:'ANTIOXIDANT DEFENSE',v:'Intracellular antioxidants \u2014 glutathione (~5 mM), superoxide dismutase, catalase, thioredoxin \u2014 rapidly scavenge \u2022OH radicals. Only at high dose rates are these systems overwhelmed.'}],
+  [{l:'ENERGY DEPOSITION',v:'1 Gy deposits 6.24\u00d710\u00b9\u00b2 eV/g \u2192 ~2\u00d710\u00b9\u2070 ion pairs/g. CT scan (~10 mGy) deposits ~0.01 J/kg \u2014 boiling 1 gram of water requires 2,260 J. Radiation energy is trivially small but biologically specific because of DNA targeting.'},{l:'DOSE RATE EFFECT',v:'High dose rate (CT: ~1 Gy/min) is offset by extremely short exposure time. Dose rate matters enormously: 1 Sv over 1 year is far less damaging than 1 Sv in 1 minute, due to continuous DNA repair during protracted low-dose-rate exposure.'}],
+  [{l:'CHROMOSOMAL ABERRATIONS',v:'Chromosome dicentrics (two centromeres in one chromosome) = two DSBs in different chromosomes misrepaired by NHEJ. Background rate: 0\u20132 per 1,000 cells. Detectable increase above ~100 mSv. Primary tool in retrospective biological dosimetry (FISH, Giemsa staining, dicentric assay).'},{l:'GENOMIC INSTABILITY',v:'Higher doses induce persistent genomic instability in cell progeny many generations post-exposure. Mechanism: epigenetic changes, persistent ROS generation, ongoing aberrant DNA repair signaling. Contributes to long-term carcinogenesis risk.'}],
+  [{l:'DSB CRITICAL LESION',v:'DNA double-strand break: both phosphodiester backbones severed within ~10 bp. Unlike SSBs (repaired using intact complementary strand as template), DSBs require complex end-processing. Misrepaired DSBs \u2192 translocations, deletions, inversions \u2192 may activate oncogenes or inactivate tumor suppressors.'},{l:'\u03b3-H2AX BIOMARKER',v:'Within 30 min of DSB formation, histone H2AX is phosphorylated at Ser139 (\u03b3-H2AX), forming microscopically visible nuclear foci. 1 focus \u2248 1 DSB. Sensitive down to ~1 mSv. Foci resolve as DSBs are repaired (hours to days). Used as an acute biological dosimeter.'}],
+  [{l:'5-HT3 PRODROMAL MECHANISM',v:'Radiation apoptosis of enterochromaffin cells in GI mucosa releases serotonin (5-HT). 5-HT activates 5-HT3 receptors on vagal afferents \u2192 nucleus tractus solitarius \u2192 CTZ \u2192 emetic reflex. This is why 5-HT3 antagonists (ondansetron, granisetron) are first-line antiemetics for radiation-induced nausea/vomiting.'},{l:'BYSTANDER EFFECT',v:'Irradiated cells signal non-irradiated neighbors via gap junctions and secreted molecules (ROS, Ca\u00b2\u207a signals, TGF-\u03b2). Bystander cells experience DNA damage without direct irradiation. Amplifies tissue damage beyond directly hit cells, especially at low-to-moderate doses.'}],
+  [{l:'HSC DOSE-RESPONSE CURVE',v:'Hematopoietic stem cell survival: S = e^(-D/D\u2080) where D\u2080 \u2248 1.5 Sv. At 0.4 Sv: ~76% HSC survive. At 1 Sv: ~51%. At 2 Sv: ~26%. At 4 Sv: ~7%. At 6 Sv: ~1.7% \u2014 below threshold for autologous marrow recovery without growth factors.'},{l:'CYTOKINE STORM',v:'Radiation induces acute release of G-CSF, IL-1\u03b2, IL-6, TNF-\u03b1, IFN-\u03b3, TGF-\u03b2 within hours. G-CSF stimulates emergency granulopoiesis. IL-6 drives fever. TNF-\u03b1 mediates vascular effects. The cytokine storm contributes to prodromal malaise and accelerates compensatory HSC proliferation.'}],
+  [{l:'LYMPHOCYTE KINETICS (METREPOL)',v:'ALC at 48h post-exposure is the most validated early triage indicator: ALC >1,500: no/minimal ARS | ALC 1,000\u20131,499: mild Grade I | ALC 500\u2013999: moderate Grade II | ALC 100\u2013499: severe Grade III | ALC <100: very severe/lethal Grade IV. Used by IAEA, WHO, and NATO medical protocols.'},{l:'VASCULAR ENDOTHELIAL INJURY',v:'Radiation activates vascular endothelium: von Willebrand factor released from Weibel-Palade bodies within hours. ICAM-1, E-selectin, VCAM-1 upregulated \u2192 leukocyte adhesion. Thrombomodulin downregulated \u2192 prothrombotic shift. Acid sphingomyelinase activation \u2192 ceramide \u2192 endothelial apoptosis at higher doses.'}],
+  [{l:'GI CRYPT CELL BIOLOGY',v:'GI epithelium renews every 3\u20135 days from Lgr5+ crypt stem cells (D\u2080 \u2248 1.3 Sv). At 1\u20132 Sv: ~50% crypt survival \u2192 full mucosal recovery. At 4 Sv: ~5% survival \u2192 marginal recovery possible with growth factors. At 6 Sv: ~0.1% \u2192 complete denudation inevitable. Villi die without crypt replacement within 3\u20135 days.'},{l:'GUT BARRIER FAILURE',v:'Loss of tight junctions (claudin, occludin) in mucosal epithelium \u2192 increased intestinal permeability \u2192 bacterial translocation. Commensal Gram-negatives (E. coli, Klebsiella) enter portal circulation \u2192 systemic septicemia. Combined with neutropenia from aplasia: invariably fatal without aggressive antibiotics.'}],
+  [{l:'DUAL SYNDROME KINETICS',v:'2\u20134 Sv: relative contributions \u2014 2 Sv: ~90% hematopoietic, ~10% GI; 4 Sv: ~60% hematopoietic, ~40% GI; 6 Sv: ~30% hematopoietic, ~70% GI. Above 6 Sv, GI syndrome becomes the primary driver of death in the absence of successful BMT.'},{l:'BONE MARROW TRANSPLANT BIOLOGY',v:'BMT replaces destroyed marrow with donor HSC; engraftment takes 2\u20134 weeks. Risks: graft failure, graft-vs-host disease (GVHD) from donor T-cells attacking recipient. Chernobyl: most BMTs failed to engraft \u2014 survivors recovered via residual autologous cells. BMT most effective at 4\u20137 Sv; above 8 Sv, GI failure prevents survival long enough for engraftment.'}],
+  [{l:'LD50 CLINICAL CONTEXT',v:'LD50/60 (dose killing 50% within 60 days) is not a fixed biological constant \u2014 it depends entirely on medical care quality. WWII era estimate: ~3\u20134 Sv. Modern ICU with G-CSF/BMT: ~6\u20137 Sv. This ~2-fold difference demonstrates the profound impact of supportive care on radiation survival.'},{l:'CRS (RADIATION BURNS)',v:'Cutaneous radiation syndrome at >6 Sv: epidermis cannot renew (basal cell D\u2080 ~3 Gy) \u2192 progressive denudation at 2\u20134 weeks. Dermis capillaries damaged \u2192 edema, impaired healing. Identical histology to thermal burns but delayed onset. Managed with silver-containing dressings, split-thickness skin grafts.'}],
+  [{l:'COMPLETE GI FAILURE',v:'At 10 Sv: crypt survival \u2248 e^(\u221210/1.3) \u2248 0.00046% \u2014 functionally zero. Villi denude within 2\u20134 days (no crypt replacement). The intestine becomes a 7-meter raw wound. Fluid/electrolyte losses: 5\u201310 L/day \u2192 hypovolemia, hypotension, hypernatremia, metabolic acidosis.'},{l:'MULTI-ORGAN FAILURE CASCADE',v:'Radiation-induced MOF: aplasia \u2192 sepsis \u2192 ARDS (radiation pneumonitis + septic lung injury) \u2192 renal failure (sepsis-induced ischemia + direct tubular damage) \u2192 hepatic failure (direct hepatocyte damage + ischemia). MOF is the final common pathway for death in severe ARS.'}],
+  [{l:'COMBINED SYNDROME',v:'20\u201350 Sv: both GI and cerebrovascular syndromes race toward death simultaneously. Cerebral edema begins within hours while GI denudation occurs over days. Vascular endothelium throughout all organs fails simultaneously.'},{l:'COAGULATIVE NECROSIS',v:'At very high dose rates, direct energy deposition causes local tissue heating. Combined with ionization, this produces coagulative necrosis \u2014 protein denaturation analogous to thermal cooking \u2014 particularly in richly vascularized tissues such as the brain and GI tract.'}],
+  [{l:'CEREBROVASCULAR MECHANISM',v:'Ceramide-mediated endothelial apoptosis via acid sphingomyelinase \u2192 cytochrome c release \u2192 caspase cascade \u2192 endothelial death. Plasma floods cerebral parenchyma (vasogenic edema). ICP rises catastrophically. Brainstem herniates through foramen magnum \u2192 cardiorespiratory arrest.'},{l:'NEURONAL DEATH PATHWAY',v:'Neurons (post-mitotic, high D\u2080 ~50+ Sv) die here primarily from: (1) ischemia from vascular failure; (2) excitotoxicity from massive glutamate release; (3) overwhelming oxidative stress. At these doses, even neurons are directly damaged faster than any possible repair.'}],
+  [{l:'INSTANTANEOUS PROTEIN DENATURATION',v:'At >150 Sv: energy deposition rate sufficient to raise local tissue temperature. All proteins simultaneously lose tertiary structure from combined thermal + ionization effects. Enzyme catalysis ceases. Ion channels fail. Every ATP-dependent process stops instantaneously.'},{l:'ION PAIR DENSITY',v:'At 1000 Sv: ~10\u00b9\u2077 ion pairs/g/s. Every DNA molecule sustains thousands of DSBs per microsecond. Every enzyme active site ionized multiple times. Lipid peroxidation is total and instantaneous. No antioxidant, no repair system, no cellular process can function. Biological death is instantaneous.'}],
+  [{l:'BEYOND PHYSICAL LIMITS OF BIOLOGY',v:'At >150 Sv the concept of dose-response ceases to apply. Every molecular bond in every cell is disrupted simultaneously. The organism does not \u201cdie\u201d \u2014 it ceases to be a functioning biological entity in real time. No repair pathway, no protective mechanism, no emergency response has any meaning.'},{l:'FORENSIC DOSIMETRY ONLY',v:'Doses in this range are verified post-mortem only: electron paramagnetic resonance (EPR) of tooth enamel (no upper limit), neutron activation of Na-24 in bone, P-32 in hair/nails, and Monte Carlo neutron transport modeling (MCNP, SCALE). No living biological measurement is possible.'}],
+];
+
+// ── BLOOD COUNTS ────────────────────────────────────────
+const BLOOD=[
+  {w:{v:'5,000\u201310,000',c:'#00ff41',s:'NORMAL'},a:{v:'1,500\u20133,000',c:'#00ff41',s:'NORMAL'},n:{v:'2,000\u20136,000',c:'#00ff41',s:'NORMAL'},p:{v:'150,000\u2013400,000',c:'#00ff41',s:'NORMAL'},h:{v:'12\u201317 g/dL',c:'#00ff41',s:'NORMAL'},note:'All counts within reference ranges. No ARS criteria met.'},
+  {w:{v:'~5,000',c:'#00ff41',s:'NORMAL'},a:{v:'~2,000',c:'#00ff41',s:'NORMAL'},n:{v:'~3,500',c:'#00ff41',s:'NORMAL'},p:{v:'~250,000',c:'#00ff41',s:'NORMAL'},h:{v:'~14 g/dL',c:'#00ff41',s:'NORMAL'},note:'No radiation-attributable changes. Indistinguishable from unexposed controls.'},
+  {w:{v:'~4,800',c:'#00ff41',s:'NORMAL'},a:{v:'~1,900',c:'#00ff41',s:'NORMAL'},n:{v:'~3,200',c:'#00ff41',s:'NORMAL'},p:{v:'~240,000',c:'#00ff41',s:'NORMAL'},h:{v:'~14 g/dL',c:'#00ff41',s:'NORMAL'},note:'Within normal reference range. No clinical significance. Routine CBC only for high-frequency imaging patients.'},
+  {w:{v:'~4,200',c:'#b8ff00',s:'LOW-NORMAL'},a:{v:'~1,600',c:'#b8ff00',s:'MILD LOW'},n:{v:'~2,800',c:'#b8ff00',s:'NORMAL'},p:{v:'~220,000',c:'#00ff41',s:'NORMAL'},h:{v:'~13.5 g/dL',c:'#00ff41',s:'NORMAL'},note:'Mild subclinical lymphopenia at nadir (4\u20136 weeks). Within normal variation. Annual CBC required for occupational workers above 10 mSv/yr.'},
+  {w:{v:'~3,500',c:'#ffe600',s:'LOW'},a:{v:'~1,000\u20131,500',c:'#ffe600',s:'DEPRESSED'},n:{v:'~2,200',c:'#b8ff00',s:'LOW-NORMAL'},p:{v:'~180,000',c:'#b8ff00',s:'NORMAL'},h:{v:'~13 g/dL',c:'#b8ff00',s:'NORMAL'},note:'ALC 48h post-exposure: ~1,500\u20132,000/\u03bcL = NO ARS by METREPOL. Subclinical lymphopenia at nadir. Full recovery within 6\u20138 weeks.'},
+  {w:{v:'~2,500\u20133,500',c:'#ffe600',s:'LOW'},a:{v:'~800\u20131,500',c:'#ffe600',s:'DEPRESSED'},n:{v:'~1,800',c:'#ffe600',s:'LOW'},p:{v:'~130,000\u2013160,000',c:'#ffe600',s:'LOW-NORMAL'},h:{v:'~12 g/dL',c:'#ffe600',s:'LOW-NORMAL'},note:'ALC 48h: ~1,000\u20131,500/\u03bcL = MILD ARS (METREPOL Grade I). Daily CBC monitoring recommended. G-CSF consideration if ALC continues to fall.'},
+  {w:{v:'~1,500\u20132,500',c:'#ff9900',s:'DEPRESSED'},a:{v:'~500\u2013800',c:'#ff9900',s:'SEVERELY LOW'},n:{v:'~1,000\u20131,200',c:'#ff9900',s:'LOW'},p:{v:'~80,000\u2013120,000',c:'#ff9900',s:'LOW'},h:{v:'~11\u201312 g/dL',c:'#ffe600',s:'LOW'},note:'ALC 48h: 500\u2013999/\u03bcL = MODERATE ARS (METREPOL Grade II). ANC approaching agranulocytosis. G-CSF initiated (filgrastim 5 \u03bcg/kg/day). Daily CBC mandatory.'},
+  {w:{v:'~500\u20131,500',c:'#ff5500',s:'SEVERE \u2193'},a:{v:'~300\u2013500',c:'#ff5500',s:'CRITICAL'},n:{v:'<500',c:'#ff5500',s:'AGRANULOCYTOSIS'},p:{v:'~20,000\u201350,000',c:'#ff5500',s:'SEVERE \u2193'},h:{v:'~9\u201311 g/dL',c:'#ff9900',s:'ANEMIA'},note:'ALC 48h: 100\u2013499/\u03bcL = SEVERE ARS (METREPOL Grade III). ANC <500/\u03bcL: any fever is a medical emergency. Platelet transfusions required. G-CSF 10 \u03bcg/kg/day. BMT evaluation mandatory.'},
+  {w:{v:'~100\u2013500',c:'#ff2200',s:'CRITICAL \u2193'},a:{v:'<100',c:'#ff2200',s:'UNDETECTABLE'},n:{v:'~0\u2013100',c:'#ff2200',s:'PROFOUND APLASIA'},p:{v:'<10,000',c:'#ff2200',s:'CRITICAL \u2014 BLEED RISK'},h:{v:'~7\u20139 g/dL',c:'#ff5500',s:'SEVERE ANEMIA'},note:'ALC 48h: <100/\u03bcL = VERY SEVERE/LETHAL ARS (METREPOL Grade IV). Profound aplasia. Daily platelet + RBC transfusions essential. Protective isolation (HEPA room). BMT urgently required.'},
+  {w:{v:'<50\u2013200',c:'#aa0000',s:'APLASTIC'},a:{v:'~0\u201350',c:'#aa0000',s:'ABSENT'},n:{v:'~0',c:'#aa0000',s:'ABSENT'},p:{v:'~0\u20135,000',c:'#aa0000',s:'ABSENT'},h:{v:'~5\u20138 g/dL',c:'#ff2200',s:'SEVERE ANEMIA'},note:'Complete aplasia. DIC may compound thrombocytopenia. Without BMT: death from infection/hemorrhage in 2\u20134 weeks. BMT gives ~50\u201360% survival. GVHD and engraftment failure are major risks.'},
+  {w:{v:'~0\u201350',c:'#880000',s:'ABSENT'},a:{v:'~0',c:'#880000',s:'ABSENT'},n:{v:'~0',c:'#880000',s:'ABSENT'},p:{v:'~0\u20132,000',c:'#880000',s:'ABSENT'},h:{v:'~3\u20136 g/dL',c:'#aa0000',s:'PRE-TERMINAL'},note:'Complete pancytopenia + GI failure. Polymicrobial septicemia. Severe DIC: elevated PT/PTT/D-dimer, depleted fibrinogen. Death from combined GI + hematopoietic failure within 5\u201314 days.'},
+  {w:{v:'N/A',c:'#660000',s:'N/A'},a:{v:'N/A',c:'#660000',s:'N/A'},n:{v:'N/A',c:'#660000',s:'N/A'},p:{v:'N/A',c:'#660000',s:'N/A'},h:{v:'N/A',c:'#660000',s:'N/A'},note:'Blood cannot be meaningfully drawn or interpreted. Complete vascular collapse and massive GI hemorrhage preclude laboratory assessment. Death within 3\u20137 days. Palliative care only.'},
+  {w:{v:'N/A',c:'#440000',s:'N/A'},a:{v:'N/A',c:'#440000',s:'N/A'},n:{v:'N/A',c:'#440000',s:'N/A'},p:{v:'N/A',c:'#440000',s:'N/A'},h:{v:'N/A',c:'#440000',s:'N/A'},note:'Cardiovascular and cerebrovascular collapse within hours. No laboratory assessment relevant. Death within 1\u201310 days. All care is palliative.'},
+  {w:{v:'N/A',c:'#220000',s:'N/A'},a:{v:'N/A',c:'#220000',s:'N/A'},n:{v:'N/A',c:'#220000',s:'N/A'},p:{v:'N/A',c:'#220000',s:'N/A'},h:{v:'N/A',c:'#220000',s:'N/A'},note:'CNS syndrome. Death within hours to 2 days. Deep sedation is the only appropriate intervention.'},
+  {w:{v:'N/A',c:'#110000',s:'N/A'},a:{v:'N/A',c:'#110000',s:'N/A'},n:{v:'N/A',c:'#110000',s:'N/A'},p:{v:'N/A',c:'#110000',s:'N/A'},h:{v:'N/A',c:'#110000',s:'N/A'},note:'Instantaneous death. Forensic post-mortem dosimetry via EPR of tooth enamel, neutron activation of Na-24 in bone, TLD from clothing.'},
+  {w:{v:'N/A',c:'#080000',s:'N/A'},a:{v:'N/A',c:'#080000',s:'N/A'},n:{v:'N/A',c:'#080000',s:'N/A'},p:{v:'N/A',c:'#080000',s:'N/A'},h:{v:'N/A',c:'#080000',s:'N/A'},note:'Beyond biological viability. All haematological concepts are inapplicable. No blood can exist in a functional state at this dose. Post-mortem forensic dosimetry is the only relevant scientific activity.'},
+];
+
+// ── TREATMENT ───────────────────────────────────────────
+const TX=[
+  {items:['No treatment required','Maintain normal lifestyle and activities','ALARA practices for occupational workers (minimize dose, maximize distance, use shielding)','No special medical follow-up needed']},
+  {items:['No treatment required for isolated exposures','No medical follow-up needed','Occupational workers: annual TLD badge review only']},
+  {items:['No treatment required','Do not withhold clinically indicated imaging due to radiation concern \u2014 benefits outweigh risks','ALARA: Image Gently / Image Wisely principles to minimize dose while maintaining diagnostic quality','Routine age-appropriate cancer screening (not dose-related)']},
+  {items:['Annual CBC for occupational workers exceeding 10 mSv/yr','Formal TLD/OSL dosimetry badge (legal requirement for radiation workers)','Workplace ALARA review if annual limits are approached','Cytogenetic dosimetry (dicentric assay) if acute high exposure is suspected']},
+  {items:['Biological dosimetry: \u03b3-H2AX foci assay within 24h, CBC at 24h and 48h post-exposure','Dicentric chromosome assay within 24\u201348h (IAEA Biodosimetry Network laboratories)','Repeat CBC at 2 and 4 weeks to confirm recovery trajectory','Cancer risk counseling; estimate 0.5\u20131% excess lifetime cancer risk (BEIR VII)']},
+  {items:['CBC at 6h, 24h, 48h post-exposure (lymphocyte kinetics for METREPOL triage)','Antiemetics if symptomatic: ondansetron 8mg PO q8h (5-HT3 antagonist) \u00b1 aprepitant (NK-1 antagonist)','Cytogenetic dosimetry (dicentric assay) within 24\u201348h','Repeat CBC at 2\u20133 weeks to confirm lymphocyte recovery','Radiation medicine specialist follow-up; outpatient management adequate']},
+  {items:['Antiemetics: ondansetron 8mg IV/PO q8h + lorazepam 0.5mg q6h for refractory nausea','IV fluid hydration: 2\u20133 L/day isotonic saline/LR for dehydration from vomiting/diarrhea','Serial CBC daily for first week, then every 2\u20133 days for 4 weeks','Cytogenetic biodosimetry to confirm dose (IAEA-accredited laboratory)','G-CSF (filgrastim 5 \u03bcg/kg/day SC) if ALC <1,000/\u03bcL at 48h or ANC falls <1,000/\u03bcL','Antibacterial prophylaxis: ciprofloxacin 500mg PO BID when ANC <1,000/\u03bcL']},
+  {items:['HOSPITALIZATION RECOMMENDED (ARS GRADE I)','G-CSF: filgrastim 5\u201310 \u03bcg/kg/day SC \u2014 stimulates emergency granulopoiesis from surviving HSC','Platelet transfusions (irradiated, leukodepleted): threshold <10,000\u201320,000/\u03bcL or active bleeding','RBC transfusions (irradiated, CMV-negative, leukodepleted) for symptomatic anemia (Hgb <8 g/dL)','Empirical antibiotics when ANC <500/\u03bcL + fever: IV piperacillin-tazobactam or cefepime','Antifungal prophylaxis: fluconazole 400mg/day when ANC <500/\u03bcL for >7 days','Antiemetics: ondansetron 8mg IV q8h + aprepitant 125mg day 1 + dexamethasone 8mg IV BID','TPN if oral intake falls below 50% of caloric needs']},
+  {items:['ICU ADMISSION REQUIRED (ARS GRADE II\u2013III)','G-CSF: filgrastim 10 \u03bcg/kg/day + GM-CSF (sargramostim) \u2014 maximal hematopoietic stimulation','BMT evaluation: HLA-type patient and first-degree relatives immediately (25% sibling match chance)','Protective (reverse) isolation: HEPA-filtered positive pressure room; N95 masks for all staff','Empirical IV antibiotics from ANC <500/\u03bcL: piperacillin-tazobactam + vancomycin + micafungin 150mg/day','Thrombopoietin receptor agonists: romiplostim 10 \u03bcg/kg/week SC for platelet recovery','TPN mandatory: 25\u201330 kcal/kg/day with protein 1.5\u20132 g/kg/day','REAC/TS hotline: +1-865-576-3131 (24/7 specialist consultation)']},
+  {items:['URGENT BMT CENTER TRANSFER (within 48\u201372 hours)','HLA-typing: patient + all siblings + unrelated donor search (NMDP/Be The Match) immediately','G-CSF maximum dose: filgrastim 10 \u03bcg/kg/day + GM-CSF + EPO 40,000 U/week SC','Protective isolation from admission (positive pressure HEPA)','Empirical polymicrobial antibiotics from day 7 regardless of fever: add IV posaconazole for mold prophylaxis','Daily platelet transfusions (irradiated, leukodepleted): maintain >20,000/\u03bcL; >50,000 if actively bleeding','CRS (radiation burns) management: burn surgery consultation; silver-containing wound dressings','Post-BMT: cyclosporine 1.5 mg/kg IV BID + methotrexate for GVHD prophylaxis','REAC/TS hotline: +1-865-576-3131 \u2014 mandatory specialist consultation']},
+  {items:['BMT IS ONLY CHANCE \u2014 MUST OCCUR WITHIN FIRST 2 WEEKS before GI failure precludes survival','All above ICU measures at maximum intensity','Haploidentical BMT (parent/child: 50% HLA match) if no matched sibling or unrelated donor available in time','GI: bowel rest, TPN mandatory, octreotide 100\u2013500 \u03bcg SC TID to reduce GI secretions/fluid loss','Palifermin (keratinocyte growth factor) 60 \u03bcg/kg/day IV for GI mucosal repair (used in BMT conditioning)','Methylprednisolone 1 mg/kg/day IV for vascular anti-inflammatory effect','Parallel palliative care team \u2014 informed consent for all interventions; expected survival <30% with maximum therapy']},
+  {items:['PALLIATIVE / COMFORT CARE ONLY \u2014 No curative options above ~8\u201310 Sv','Anti-emetics: ondansetron 8mg IV q4h + haloperidol 2mg IV q6h + lorazepam 1mg IV q4h (refractory nausea)','IV opioid analgesia (morphine PCA) for GI pain \u2014 uncontrolled dosing for comfort; patient-centered goals','IV fluids: isotonic saline maintenance (may slow electrolyte collapse, extends days of life, not curative)','Anti-diarrheal agents (loperamide 4mg initial, 2mg after each loose stool) for comfort','Family counseling: chaplain/spiritual care, social work, grief support','Organ donation: NOT possible (radiation injury to all organs)']},
+  {items:['PALLIATIVE SEDATION ONLY \u2014 Death within 3\u201310 days','Deep sedation: IV midazolam 5\u201310 mg/h + ketamine 0.5 mg/kg/h for seizure and agitation control','IV fentanyl infusion 25\u2013100 \u03bcg/h titrated to comfort','Anti-emetics at maximum dose','Withdraw all interventions not contributing to comfort','Family at bedside; chaplaincy and bereavement support','Document time of death for forensic dosimetry records']},
+  {items:['DEEP PALLIATIVE SEDATION \u2014 Death within hours to 2 days','IV midazolam 10mg + propofol infusion 50\u2013200 mcg/kg/min immediately','IV morphine 10mg bolus then infusion titrated to comfort','All curative/life-extending efforts withdrawn','Family present; death notification protocol']},
+  {items:['No treatment \u2014 direct all efforts to evacuation and decontamination of other victims','Do not risk first responder secondary exposure attempting resuscitation','Forensic post-mortem dosimetry: EPR on tooth enamel (no upper limit), neutron activation Na-24 in bone, TLD from clothing','This dose is not survivable under any scenario with any available technology']},
+  {items:['No treatment \u2014 instantaneous death','Post-mortem forensic dosimetry: EPR of tooth enamel, neutron activation of Na-24 in blood/bone, P-32 in hair/nails','Scene management: radiation survey before casualty extraction, full HAZMAT protocols','No resuscitation attempt \u2014 secondary exposure of first responders not justified']},
+];
+
+// ── TIMELINES ───────────────────────────────────────────
+const TL=[
+  [{t:'ONGOING',c:'#00ff41',e:'Normal background exposure throughout life.',d:'Unavoidable. ~3.1 mSv/yr average in USA.'}],
+  [{t:'NO TIMELINE',c:'#00ee35',e:'No biological events to track at this dose.',d:'Single exposure. No follow-up required.'}],
+  [{t:'SECONDS\u2013MINS',c:'#88ff00',e:'Diagnostic imaging completed. Dose delivered.',d:''},{t:'24 HOURS',c:'#88ff00',e:'All tissue dose resolved. Normal metabolic function resumes.',d:'No detectable biological change.'}],
+  [{t:'ONGOING',c:'#ccff00',e:'Occupational dose accumulates over months/years.',d:''},{t:'QUARTERLY',c:'#ccff00',e:'Dosimeter badge read and recorded.',d:'ALARA review if approaching 20 mSv/yr.'},{t:'ANNUALLY',c:'#b8ff00',e:'CBC and occupational health review.',d:''}],
+  [{t:'0\u201330 MIN',c:'#ffee00',e:'\u03b3-H2AX foci peak in peripheral blood lymphocytes.',d:'Most sensitive window for biological dosimetry.'},{t:'24\u201348H',c:'#ffee00',e:'CBC drawn for METREPOL triage.',d:'ALC at 48h is primary triage biomarker.'},{t:'2\u20134 WEEKS',c:'#ffee00',e:'Lymphocyte nadir (mild reduction only).',d:'Full recovery within 6\u20138 weeks.'}],
+  [{t:'1\u20136H',c:'#ffcc00',e:'Possible nausea in 5\u201310% of sensitive individuals.',d:'5-HT3/NK1 activation in GI tract.'},{t:'48H',c:'#ffcc00',e:'CBC: ALC early depression detectable.',d:'ALC 48h: ~1,500\u20132,000/\u03bcL (no ARS).'},{t:'2\u20134 WEEKS',c:'#ffcc00',e:'Lymphocyte nadir: detectable but subclinical.',d:''},{t:'6\u20138 WEEKS',c:'#b8ff00',e:'Full hematopoietic recovery.',d:'No intervention required.'}],
+  [{t:'1\u20136H',c:'#ff9900',e:'Nausea/vomiting in 20\u201350% (prodromal phase).',d:'5-HT3 release from irradiated enterochromaffin cells.'},{t:'DAYS 2\u20133',c:'#ff9900',e:'Prodrome resolves. Subclinical latent phase begins.',d:'Do not be reassured \u2014 marrow is still depleting.'},{t:'2\u20134 WEEKS',c:'#ff9900',e:'Lymphocyte and mild granulocyte nadir.',d:'ALC 500\u20131,000/\u03bcL. Monitor for infection.'},{t:'4\u20138 WEEKS',c:'#b8ff00',e:'Hematopoietic recovery.',d:'Full recovery expected within 2 months.'}],
+  [{t:'<6H',c:'#ff7700',e:'PRODROMAL: vomiting (50\u201380%), anorexia, malaise.',d:'Median time to vomiting: ~3h at 1 Sv.'},{t:'DAYS 1\u20132',c:'#ff7700',e:'Prodrome resolves: LATENT PERIOD begins (2\u20134 wks).',d:'"Walking ghost" phase \u2014 internal aplasia worsening.'},{t:'DAYS 21\u201328',c:'#ff5500',e:'MANIFEST ILLNESS: leukopenia/thrombocytopenia peaks.',d:'ANC nadir <1,000/\u03bcL. Infection risk elevated.'},{t:'WEEKS 4\u20136',c:'#ff7700',e:'Nadir: peak infection/hemorrhage risk.',d:'With treatment, recovery begins here.'},{t:'WEEKS 6\u201310',c:'#88ff00',e:'RECOVERY: marrow reconstitutes, counts normalize.',d:'G-CSF shortens nadir duration significantly.'}],
+  [{t:'1\u20134H',c:'#ff5500',e:'PRODROMAL: vomiting >80%, diarrhea, fever.',d:'Time-to-vomiting <4h = significant ARS (METREPOL Grade II).'},{t:'DAYS 1\u20132',c:'#ff5500',e:'Brief latent period. Do not discharge.',d:'Patient may appear improved \u2014 aplasia worsening.'},{t:'DAYS 7\u201314',c:'#ff2200',e:'End of latent period: manifest illness begins.',d:'ANC <500/\u03bcL. Reverse isolation. Empirical antibiotics.'},{t:'DAYS 14\u201328',c:'#ff2200',e:'NADIR: profound agranulocytosis, thrombocytopenia.',d:'Peak sepsis/hemorrhage risk. Daily blood cultures.'},{t:'WEEKS 4\u20138',c:'#ff7700',e:'Recovery (with G-CSF + transfusions + antibiotics).',d:'G-CSF shortens recovery from ~6 to ~3 weeks.'}],
+  [{t:'30\u201360 MIN',c:'#ff3300',e:'EXPLOSIVE PRODROMAL: vomiting, severe diarrhea.',d:'Time-to-vomiting <60 min \u2192 dose likely >3 Sv (AFRRI).'},{t:'DAYS 3\u20137',c:'#ff3300',e:'Short latent phase (3\u20135 days) then rapid manifest illness.',d:'Latent period shorter and less distinct than Grade II.'},{t:'DAYS 10\u201320',c:'#ff2200',e:'PROFOUND APLASIA: ANC \u2248 0, platelets \u2248 0.',d:'ICU care. Daily transfusions. Sepsis prevention.'},{t:'DAYS 14\u201330',c:'#aa0000',e:'MAXIMUM MORTALITY RISK WINDOW.',d:'GI involvement compounds marrow failure.'},{t:'WEEKS 4\u201310',c:'#ff5500',e:'Possible recovery IF BMT successful AND GI intact.',d:'BMT engraftment requires 2\u20134 weeks.'}],
+  [{t:'<15 MIN',c:'#cc0000',e:'INCAPACITATING VOMITING. Cannot function.',d:'Time-to-vomiting <15 min \u2192 dose likely >4 Sv.'},{t:'DAYS 5\u201310',c:'#cc0000',e:'GI syndrome: mucosal sloughing begins.',d:'Bloody diarrhea, electrolyte crisis.'},{t:'DAYS 7\u201414',c:'#aa0000',e:'Complete marrow aplasia + GI failure.',d:'BMT window closing. Septicemia invariable.'},{t:'DAYS 10\u201321',c:'#880000',e:'Death without BMT. With BMT: highest risk period.',d:'Chernobyl: most deaths occurred days 14\u201328.'}],
+  [{t:'<5\u201310 MIN',c:'#aa0000',e:'Immediate incapacitation, explosive emesis.',d:'Cannot perform any task after exposure.'},{t:'DAYS 3\u20135',c:'#aa0000',e:'GI mucosal denudation. Septicemia onset.',d:'Bloody diarrhea, fluid loss 5\u201310 L/day.'},{t:'DAYS 5\u201414',c:'#880000',e:'Death from combined GI failure + sepsis.',d:'Even maximum care: survival <30%.'}],
+  [{t:'<30 MIN',c:'#880000',e:'Severe incapacitation: ataxia + GI symptoms.',d:'Early CNS effects supplement GI syndrome.'},{t:'DAYS 2\u20135',c:'#880000',e:'GI denudation complete.',d:'Death from GI failure + cardiovascular collapse.'},{t:'DAYS 3\u20137',c:'#660000',e:'Death \u2014 combined GI and early CNS syndrome.',d:'No intervention alters outcome.'}],
+  [{t:'MINUTES',c:'#660000',e:'Seizures, ataxia, severe prostration.',d:'CNS syndrome emerging alongside GI.'},{t:'HOURS 1\u20136',c:'#660000',e:'Cardiovascular collapse, cerebral edema.',d:'ICP rising. Herniation imminent.'},{t:'DAYS 1\u20135',c:'#440000',e:'Death \u2014 GI and cerebrovascular syndrome.',d:'At 20 Sv: 3\u201310 days. At 50 Sv: hours.'}],
+  [{t:'SECONDS\u2013MINS',c:'#440000',e:'Instantaneous neurological impairment.',d:'All executive function lost. Cardiac arrhythmia.'},{t:'HOURS',c:'#440000',e:'Massive cerebral edema, brain herniation.',d:'ICP rises catastrophically.'},{t:'HRS\u2013DAYS',c:'#220000',e:'Death \u2014 cerebrovascular syndrome.',d:'At 50 Sv: hours. At 150 Sv: minutes.'}],
+  [{t:'SECONDS',c:'#220000',e:'Complete loss of all biological function.',d:'All cellular processes halt simultaneously.'},{t:'MINUTES',c:'#110000',e:'Clinical and biological death.',d:'No resuscitation possible under any circumstances.'}],
+];
+
+// ── CASE STUDIES ────────────────────────────────────────
+const CASES=[
+  [{n:'RADON GAS EXPOSURE \u2014 GENERAL PUBLIC',d:'~2.3 mSv/yr from radon on average; up to 100 mSv/yr in high-radon homes',x:'Radon-222 (decay product of U-238) accumulates in poorly ventilated buildings. Responsible for ~21,000 lung cancer deaths/year in the USA (EPA estimate). The primary source of natural background radiation for most people. Mitigation: improved ventilation, sealing of basement cracks.'}],
+  [{n:'DENTAL PANORAMIC X-RAY',d:'~5\u20137 \u03bcSv effective dose (digital radiography)',x:'Modern digital dental X-ray uses ~50% less dose than older film-based systems. At 5 \u03bcSv, equivalent to ~50 bananas or 1 hour of cosmic ray exposure at flight altitude. The Image Gently campaign has driven significant dose reduction in pediatric dental imaging. No clinical concern.'}],
+  [{n:'SPIRAL ABDOMINAL CT SCAN',d:'~8\u201315 mSv effective dose (adult abdomen/pelvis)',x:'CT contributes ~24% of collective US medical radiation dose. ACIR/ACR dose index registry tracks CT doses nationally. At 10 mSv, theoretical excess cancer risk ~1 in 2,000 per BEIR VII. The Image Wisely campaign promotes dose optimization. For any indicated CT scan, the clinical benefit far outweighs theoretical risk.'}],
+  [{n:'FUKUSHIMA DAIICHI WORKERS (2011)',d:'Most workers: 1\u201350 mSv; 6 workers exceeded 250 mSv; highest individual: ~678 mSv',x:'Following the March 2011 tsunami-induced meltdown, 25,000+ workers were involved in plant stabilization over subsequent years. Dose limits were temporarily raised to 250 mSv for emergency operations. WHO 2013 report concluded no observable excess cancer risk expected for most workers. Highest-dose workers may have a small but measurable excess cancer risk.'}],
+  [{n:'NUCLEAR MEDICINE \u2014 FDG-PET SCAN',d:'~7\u201310 mSv effective dose (F-18 FDG)',x:'Fluorodeoxyglucose PET: F-18 distributes throughout body with preferential uptake in metabolically active tissue. Total-body PET scanners (uEXPLORER) reduce dose to ~1\u20132 mSv. Dose similar to an abdominal CT. Widely used in oncology staging, neurology, cardiology. Clinical benefit vastly exceeds theoretical risk.'}],
+  [{n:'CHERNOBYL LIQUIDATORS (1986\u20131990)',d:'Average ~120 mSv; highest-dose workers: 300\u2013500 mSv',x:'~600,000 workers involved in cleanup operations. The most heavily exposed (plant workers, first responders) received up to 500+ mSv. UNSCEAR 2008 and WHO studies found elevated leukemia rates in those receiving >150 mSv. Thyroid cancer in children from I-131 contamination is the most firmly established health consequence (~6,000 cases).'}],
+  [{n:'CHERNOBYL FIRST RESPONDERS \u2014 FIREFIGHTERS',d:'Estimated 0.25\u20134 Sv; 134 confirmed ARS cases; 28 ARS deaths',x:'Firefighters responding to the April 26, 1986 fire received the highest doses. 28 died of ARS within 3 months (all estimated >4 Sv). Documented in UNSCEAR 2008 Annex D. Most were treated at Clinic No. 6, Moscow. Robert Gale coordinated BMT program. Their story is the basis for the METREPOL triage system.'}],
+  [{n:'HIROSHIMA / NAGASAKI SURVIVOR COHORT (LSS)',d:'~0.5\u20132 Sv at 0.8\u20131.5 km from hypocenter; 120,000 survivors followed since 1950',x:'The Life Span Study (LSS) by the Radiation Effects Research Foundation (RERF) is the primary basis for international radiation risk estimates. Statistically significant excess cancer mortality detected above ~100\u2013200 mSv. Solid cancer and leukemia excesses documented. No statistically significant excess detected below ~50 mSv after statistical correction.'}],
+  [{n:'TOKAIMURA CRITICALITY ACCIDENT, JAPAN (1999)',d:'Worker 1 (H. Ouchi): ~17 Sv; Worker 2 (M. Shinohara): ~7 Sv; Worker 3 (Y. Yokokawa): ~2.2 Sv',x:'Japan\'s worst nuclear accident. Three workers exposed to a burst of neutron + gamma radiation during an unauthorized criticality event. Hisashi Ouchi (~17 Sv) died after 83 days despite extraordinary intervention. Masato Shinohara (~7 Sv) died at 211 days post-accident. Yutaka Yokokawa (~2.2 Sv) survived. Documented in detail by NIRS Japan.'}],
+  [{n:'SL-1 REACTOR ACCIDENT, IDAHO (1961)',d:'Operator 1 (at control rod): estimated >100 Sv (instantaneous flash)',x:'An experimental boiling water reactor in Idaho was manually scrammed by an operator who withdrew the central control rod too far, initiating a prompt criticality. All 3 operators died. The operator nearest the reactor was impaled by the ejected control rod and pinned to the ceiling by steam pressure. The only person ever killed by an operating reactor accident in the USA. Dose reconstructed by REAC/TS using neutron activation.'}],
+  [{n:'LOUIS SLOTIN \u2014 DEMON CORE (1946)',d:'Estimated ~21 Sv whole-body dose',x:'Los Alamos physicist Louis Slotin was performing a criticality experiment on the "Demon Core" (a 6.2 kg Pu-239 sphere). He accidentally allowed two Be-242 reflector hemispheres to close, initiating a prompt criticality. He reflexively separated the assembly with a screwdriver, limiting the excursion. He received ~21 Sv and died 9 days later \u2014 the second death from the same core (Harry Daghlian had died 9 months earlier, ~5 Sv).'}],
+  [{n:'CHERNOBYL SEVERE ARS CASES (1986)',d:'6\u201316 Sv: 21 individuals; 13 died within 1 month',x:'Personnel receiving 6\u201316 Sv treated at Clinic No. 6, Moscow. 13 of 21 in this dose range died. Despite 13 bone marrow transplants, only 2 achieved long-term engraftment \u2014 the rest died or recovered via residual autologous stem cells. This outcome redefined BMT indications in ARS: residual autologous recovery is usually more reliable than allogeneic BMT at 4\u20138 Sv range.'}],
+  [{n:'GOI\u00c2NIA RADIOLOGICAL ACCIDENT, BRAZIL (1987)',d:'Highest-dose victim (Leide Ferreira, age 6): estimated ~7 Sv; died day 28',x:'A Cs-137 teletherapy source illegally removed from an abandoned clinic. The powder\'s blue phosphorescence attracted curious handlers. 249 people contaminated; 4 died from ARS. 112,000 people monitored. Largest accidental radiological contamination in history outside nuclear weapons testing. Documented in IAEA report TECDOC-1000.'}],
+  [{n:'COMPUTED DOSE: WITHIN REACTOR CORE',d:'~10\u201360 Sv depending on reactor type and proximity',x:'No survivor data exists at these levels. Doses are calculated via Monte Carlo neutron transport modeling (MCNP code). The precise dose depends on reactor type (BWR, PWR, RBMK), power level, and distance to active fuel. Post-accident dose reconstruction in the Chernobyl Unit 4 control room estimated doses of ~10\u201320 Sv for operators present at the moment of the explosion.'}],
+  [{n:'THEORETICALLY MODELED: PROMPT CRITICALITY FLASH',d:'~20\u2013500 Sv at <1m from prompt criticality event',x:'Prompt criticality events (Demon Core, SL-1, Tokaimura) produce a microsecond burst of gamma rays and fast neutrons. Doses >50 Sv at close range are calculated by REAC/TS using reaction product measurements: neutron activation of Na-24 in blood, P-32 in hair/nails, Fe-59 in blood, gamma activation of stable isotopes in bone. EPR of tooth enamel provides the most reliable retrospective dosimetry.'}],
+  [{n:'HYPOTHETICAL: NUCLEAR WEAPON HYPOCENTER',d:'>500 Sv at exact detonation epicenter (air burst scenario)',x:'At the hypocenter of a 15 kT fission weapon (Hiroshima-scale), prompt radiation doses >500 Sv are calculated for anyone within ~100\u2013200m. Death is from thermal effects, blast wave, and prompt radiation simultaneously. No survivor data exists within ~300m of any ground-level nuclear detonation. RERF DS02 dosimetry system is used to reconstruct historical exposures from Hiroshima and Nagasaki based on survivor location, shielding, and posture.'}],
+];
+
+// ── CONTEXT ─────────────────────────────────────────────
+const CTX=[
+  [{i:'🍌',t:'Eating 1 banana (0.1 \u03bcSv from K-40 potassium)',s:''},{i:'🌍',t:'~1 hour of cosmic ray exposure at sea level (0.04 \u03bcSv/hr)',s:''},{i:'🏠',t:'Indoor radon background: ~0.006 \u03bcSv/hr continuously',s:''}],
+  [{i:'🦷',t:'Dental bitewing X-ray: ~5 \u03bcSv',s:'IAEA Safety Reports Series'},{i:'✈️',t:'1\u20132 hour commercial flight: ~5\u201310 \u03bcSv (cosmic rays at altitude)',s:''},{i:'🍌',t:'~50 bananas equivalent potassium-40 activity',s:''}],
+  [{i:'🩻',t:'Chest PA X-ray: ~100 \u03bcSv; abdominal CT: ~8,000\u201315,000 \u03bcSv',s:'NCRP Report 160 / ACR Dose Index'},{i:'🚀',t:'NYC\u2192Tokyo transpacific flight: ~190 \u03bcSv (polar route, higher cosmic dose)',s:''},{i:'🔬',t:'Annual public dose limit: 1 mSv/yr; medical imaging excluded from this limit',s:'ICRP Publication 103'}],
+  [{i:'🔬',t:'ICRP occupational limit: 20 mSv/yr averaged over 5 years (max 50 mSv in any year)',s:'ICRP Publication 103'},{i:'🚀',t:'Typical 6-month ISS mission: ~80\u2013160 mSv (varies with solar activity)',s:'NASA Space Radiation Program'},{i:'⚠️',t:'Nuclear power plant workers typical annual dose: 1\u20135 mSv/yr (US NRC data)',s:'USNRC Radiation Exposure Data'}],
+  [{i:'⚠️',t:'US emergency worker dose limit: 100 mSv (NCRP Report 116)',s:'NCRP'},{i:'🇺🇦',t:'Temporary Chernobyl 1986 emergency worker raised limit: 350 mSv',s:'UNSCEAR 2008 Annex D'},{i:'🏔️',t:'Ramsar, Iran natural background: up to 260 mSv/yr from radium \u2014 no proven health effects in residents',s:'UNSCEAR 2000'}],
+  [{i:'☢️',t:'Chernobyl liquidators average dose: ~120 mSv (1986\u20131990)',s:'UNSCEAR 2008 Annex D'},{i:'🇯🇵',t:'Hiroshima/Nagasaki survivors at 1.5\u20132 km from hypocenter (RERF LSS data)',s:'RERF Life Span Study'},{i:'🌍',t:'Ramsar, Iran: some residents receive ~130 mSv/yr naturally \u2014 highest known natural background',s:'UNSCEAR 2000'}],
+  [{i:'🇺🇦',t:'Fukushima 2011: 6 workers exceeded 250 mSv during emergency response',s:'TEPCO dosimetry records 2011'},{i:'⚠️',t:'Below clinical ARS threshold \u2014 no ARS cases confirmed at <500 mSv',s:'NCRP Report 138'},{i:'🔬',t:'Cytogenetic dosimetry detects this dose via dicentric chromosomes in blood lymphocytes',s:'IAEA EPR-Biodosimetry 2011'}],
+  [{i:'🚒',t:'Chernobyl plant firefighters: estimated 0.8\u20134 Sv; ARS confirmed in most',s:'Guskova 1988; WHO 2006'},{i:'🇯🇵',t:'Hiroshima survivors at ~1.0\u20131.2 km: estimated 0.5\u20131.5 Sv (RERF DS02 dosimetry)',s:'RERF DS02 dosimetry system'},{i:'⚕️',t:'Tokaimura Worker 3 (Y. Yokokawa): ~2.2 Sv; survived with medical treatment',s:'NIRS Japan case report'}],
+  [{i:'☢️',t:'Chernobyl reactor hall operators night of explosion: estimated 1\u20133 Sv',s:'UNSCEAR 2008 Annex D'},{i:'⚕️',t:'Tokaimura Worker 2 (M. Shinohara): ~7 Sv, survived 211 days',s:'NIRS Japan case report'},{i:'⚕️',t:'Tokaimura Worker 1 (H. Ouchi): ~17 Sv, died day 83 despite extraordinary care',s:'NIRS Japan; Wired 1999 case report'}],
+  [{i:'💀',t:'LD50/60: ~4.5 Sv without treatment; ~6\u20137 Sv with modern ICU + G-CSF + BMT',s:'REAC/TS Registry; Anno et al. 2003'},{i:'☢️',t:'Chernobyl: 28 confirmed radiation deaths within 3 months, all estimated >4 Sv',s:'UNSCEAR 2008; WHO 2006'},{i:'⚕️',t:'Masato Shinohara (Tokaimura Worker 2): ~7 Sv; intensive treatment; died day 211',s:'NIRS Japan case report'}],
+  [{i:'💀',t:'Chernobyl firefighters with 6\u201316 Sv: 13 of 21 died within 1 month',s:'Guskova et al. 1988'},{i:'⚕️',t:'Louis Slotin, Los Alamos 1946: estimated 21 Sv; died day 9',s:'Health Physics Society historical records'},{i:'⚕️',t:'Harry Daghlian, Los Alamos 1945: estimated 5\u201310 Sv; died day 25 (first criticality victim)',s:'AEC records; Health Physics'}],
+  [{i:'💀',t:'No documented human survival above ~8\u201310 Sv at any historical accident',s:'REAC/TS Registry (>600 ARS cases)'},{i:'☢️',t:'Chernobyl Unit 4 control room workers: estimated 10\u201315 Sv',s:'WHO Chernobyl report 2006'},{i:'⚕️',t:'SL-1 Idaho accident (1961): closest operator >100 Sv (calculated); instantaneous death',s:'AEC accident report 1961'}],
+  [{i:'💀',t:'No human survivor data exists above ~10 Sv (REAC/TS registry)',s:'REAC/TS Registry'},{i:'☢️',t:'Doses in this range modeled for scenarios inside operating nuclear reactor cores',s:'IAEA TECDOC-1432'},{i:'🔬',t:'Post-mortem dose reconstruction: Na-24 neutron activation in blood, EPR of tooth enamel',s:'REAC/TS dosimetric methodology'}],
+  [{i:'💀',t:'Doses calculated for prompt criticality events at <1 m distance',s:'REAC/TS dosimetric modeling'},{i:'☢️',t:'Hiroshima survivors within 300\u2013400 m of hypocenter: modeled doses 10\u201350 Sv (RERF DS02)',s:'RERF DS02 dosimetry system'},{i:'🔬',t:'Dosimetry tools: EPR of tooth enamel (sensitive 0.1\u2013100+ Gy), TLD from clothing, neutron activation',s:''}],
+  [{i:'💀',t:'Only theoretical: inside an active nuclear reactor core during prompt criticality',s:''},{i:'☢️',t:'Possible at hypocenter of a nuclear weapon detonation (ground zero, air burst)',s:''},{i:'🔬',t:'Dose verified only by Monte Carlo neutron transport modeling (MCNP, SCALE codes)',s:''}],
+  [{i:'💀',t:'>150 Sv: hypothetical only \u2014 no scenario where biology remains relevant',s:''},{i:'☢️',t:'Equivalent only to being inside a fissioning nuclear weapon at detonation',s:''},{i:'🔬',t:'These values exist only in shielding calculations and extreme reactor physics models',s:''}],
+];
+
+// ── DOM ─────────────────────────────────────────────────
+const slider=document.getElementById('slider');
+const deathOvr=document.getElementById('deathOverlay');
+const ptclEl=document.getElementById('ptcls');
+let lastLv=-1,ptclInt=null;
+
+// Build organ list
+function buildOrgans(){
+  document.getElementById('olist').innerHTML=ORGANS.map(o=>`
+    <div class="orow" id="or-${o.id}">
+      <div class="odot" id="od-${o.id}"></div>
+      <div class="oname">${o.n}</div>
+      <div class="obar"><div class="ofill" id="of-${o.id}"></div></div>
+      <div class="olbl" id="ol-${o.id}">NORMAL</div>
+    </div>`).join('');
+}
+buildOrgans();
+
+// Build presets
+document.getElementById('presets').innerHTML=PRESETS.map(p=>`<button class="pbtn" onclick="setDose(${p.sv})">${p.l}</button>`).join('');
+
+function hexBlend(h1,h2,t){
+  const p=(h,s)=>parseInt(h.slice(s,s+2),16);
+  const r=n=>Math.round(n).toString(16).padStart(2,'0');
+  return '#'+r(p(h1,1)+(p(h2,1)-p(h1,1))*t)+r(p(h1,3)+(p(h2,3)-p(h1,3))*t)+r(p(h1,5)+(p(h2,5)-p(h1,5))*t);
+}
+
+// ── MAIN UPDATE ─────────────────────────────────────────
+function update(){
+  const sv=s2sv(parseInt(slider.value));
+  const lv=getL(sv);
+  const D=LD[lv];
+  const f=fmt(sv);
+  const col=D.c;
+
+  // Dose display
+  const dd=document.getElementById('dd');
+  dd.style.color=col;
+  dd.innerHTML=`${f.v}<span class="dunit">${f.u}</span>`;
+  document.getElementById('de').textContent=equiv(sv);
+
+  // Hazard
+  document.getElementById('hsym').textContent=D.h;
+  const hn=document.getElementById('hname');
+  hn.textContent=D.n; hn.style.color=col;
+  document.getElementById('hcat').textContent=D.cat;
+  document.getElementById('hdesc').textContent=D.desc;
+
+  // Survival bars
+  function setBar(idPct,idBar,val,c){
+    const ep=document.getElementById(idPct); ep.textContent=val+'%'; ep.style.color=c;
+    const eb=document.getElementById(idBar); eb.style.width=val+'%'; eb.style.background=c;
+  }
+  const txColor=D.st>50?'#00ff41':D.st>20?'#ff9900':'#ff2200';
+  setBar('sp1','sb1',D.s,col);
+  setBar('sp2','sb2',D.st,txColor);
+  document.getElementById('ld50').textContent=D.ld||'';
+  document.getElementById('prog').textContent=D.pr;
+
+  // Symptoms
+  const syms=SYM[lv];
+  document.getElementById('sym').innerHTML=syms.length===0
+    ?`<div class="sitem"><span class="sico">✅</span><div class="stxt"><strong>NO SYMPTOMS</strong>No clinically detectable effects. All biological systems functioning normally. DNA repair mechanisms fully capable at this dose level.</div></div>`
+    :syms.map(s=>`<div class="sitem"><span class="sico">${s.i}</span><div class="stxt"><strong>${s.t}</strong>${s.x}</div></div>`).join('');
+
+  // Mechanism
+  const mechs=MECH[lv]||[];
+  document.getElementById('mech').innerHTML=`<div class="mgrid">${mechs.map(m=>`<div class="mitem"><div class="mlabel">${m.l}</div><div class="mval">${m.v}</div></div>`).join('')}</div>`;
+
+  // Blood
+  const bl=BLOOD[lv];
+  document.getElementById('blood').innerHTML=`
+    <div class="bgrid">
+      <div class="bitem"><div class="blbl">WBC</div><div class="bval" style="color:${bl.w.c}">${bl.w.v}</div><div class="bunit">/\u03bcL</div><div class="bstat" style="color:${bl.w.c}">${bl.w.s}</div></div>
+      <div class="bitem"><div class="blbl">ALC (48h)</div><div class="bval" style="color:${bl.a.c}">${bl.a.v}</div><div class="bunit">/\u03bcL</div><div class="bstat" style="color:${bl.a.c}">${bl.a.s}</div></div>
+      <div class="bitem"><div class="blbl">ANC</div><div class="bval" style="color:${bl.n.c}">${bl.n.v}</div><div class="bunit">/\u03bcL</div><div class="bstat" style="color:${bl.n.c}">${bl.n.s}</div></div>
+      <div class="bitem"><div class="blbl">PLATELETS</div><div class="bval" style="color:${bl.p.c}">${bl.p.v}</div><div class="bunit">/\u03bcL</div><div class="bstat" style="color:${bl.p.c}">${bl.p.s}</div></div>
+      <div class="bitem"><div class="blbl">HEMOGLOBIN</div><div class="bval" style="color:${bl.h.c}">${bl.h.v}</div><div class="bunit"></div><div class="bstat" style="color:${bl.h.c}">${bl.h.s}</div></div>
+    </div>
+    <div class="bnote">${bl.note}</div>`;
+
+  // Treatment
+  const txd=TX[lv];
+  document.getElementById('tx').innerHTML=`<div class="ttitle">RECOMMENDED INTERVENTIONS</div>${txd.items.map(t=>`<div class="titem">${t}</div>`).join('')}`;
+
+  // Timeline
+  const tl=TL[lv];
+  document.getElementById('tl').innerHTML=tl.map((t,i)=>`
+    <div class="tlitem">
+      <div class="tline">
+        <div class="tdot" style="background:${t.c};color:${t.c}"></div>
+        ${i<tl.length-1?`<div class="tconn"></div>`:''}
+      </div>
+      <div class="tcont">
+        <div class="ttime" style="color:${t.c}">${t.t}</div>
+        <div class="tevent">${t.e}</div>
+        ${t.d?`<div class="tdetail">${t.d}</div>`:''}
+      </div>
+    </div>`).join('');
+
+  // Case studies
+  document.getElementById('cases').innerHTML=CASES[lv].map(c=>`
+    <div class="case">
+      <div class="cname">${c.n}</div>
+      <div class="cdose" style="color:${col}">DOSE: ${c.d}</div>
+      <div class="ctext">${c.x}</div>
+    </div>`).join('');
+
+  // Context
+  document.getElementById('ctx').innerHTML=CTX[lv].map(c=>`
+    <div class="ctxitem">
+      <span class="ctxico">${c.i}</span>
+      <div><span>${c.t}</span>${c.s?`<span class="ctxsrc">Source: ${c.s}</span>`:''}</div>
+    </div>`).join('');
+
+  // Organs
+  ORGANS.forEach(o=>{
+    const si=osi(o,lv);
+    const s=OS[si];
+    const dot=document.getElementById(`od-${o.id}`);
+    const fill=document.getElementById(`of-${o.id}`);
+    const lbl=document.getElementById(`ol-${o.id}`);
+    if(dot){dot.style.background=s.c;dot.style.boxShadow=`0 0 5px ${s.c}`;}
+    if(fill){fill.style.width=s.p+'%';fill.style.background=s.c;}
+    if(lbl){lbl.textContent=s.l;lbl.style.color=s.c;}
+    o.ids.forEach(sid=>{
+      const el=document.getElementById(sid);
+      if(!el)return;
+      if(si===0){el.style.fill='#003b0e';el.style.filter='drop-shadow(0 0 3px rgba(0,255,65,.2))';}
+      else{el.style.fill=hexBlend('#003b0e',s.c,si/7);el.style.filter=`drop-shadow(0 0 ${3+si*2}px ${s.c})`;}
+    });
+  });
+
+  // ARS phases
+  const aw=document.getElementById('ars-wrap');
+  if(lv>=6){
+    aw.style.display='block';
+    const phColors=['#ff9900','#ffe600','#ff2200','#00ff41'];
+    const active=[lv>=6,lv>=7,lv>=8,lv>=7&&lv<=11];
+    ['ap0','ap1','ap2','ap3'].forEach((id,i)=>{
+      const el=document.getElementById(id);
+      if(active[i]){el.classList.add('on');el.style.background=phColors[i];el.style.borderColor=phColors[i];el.style.color='#000';}
+      else{el.classList.remove('on');el.style.background='transparent';el.style.borderColor='var(--gk)';el.style.color='var(--gd)';}
+    });
+  } else { aw.style.display='none'; }
+
+  // Death overlay
+  deathOvr.style.display=lv>=10?'block':'none';
+
+  // Particles
+  updatePtcls(lv,col);
+
+  // Glitch on level increase
+  if(lv!==lastLv){
+    if(lv>lastLv){dd.classList.remove('glitch');void dd.offsetWidth;dd.classList.add('glitch');}
+    lastLv=lv;
+  }
+}
+
+function updatePtcls(lv,col){
+  if(ptclInt){clearInterval(ptclInt);ptclInt=null;}
+  ptclEl.innerHTML='';
+  if(lv<2)return;
+  const rate=Math.min(60,lv*5);
+  ptclInt=setInterval(()=>{
+    const p=document.createElement('div');
+    p.className='ptcl';
+    const angle=Math.random()*Math.PI*2,dist=40+Math.random()*200;
+    const c=lv<6?'#00ff41':lv<9?'#ff9900':'#ff2200';
+    p.style.cssText=`left:${Math.random()*window.innerWidth}px;top:${Math.random()*window.innerHeight}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation-duration:${0.4+Math.random()*1.2}s;background:${c};`;
+    ptclEl.appendChild(p);
+    setTimeout(()=>p.remove(),1500);
+  },1000/rate);
+}
+
+function setDose(sv){slider.value=sv2s(sv);update();}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tc').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('on'));
+  document.getElementById('tc-'+name).classList.add('on');
+  btn.classList.add('on');
+}
+
+slider.addEventListener('input',update);
+update();
+</script>
+
+</body>
+</html>
